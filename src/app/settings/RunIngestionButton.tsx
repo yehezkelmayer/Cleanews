@@ -54,19 +54,16 @@ export function RunIngestionButton() {
   }
 
   return (
-    <div className="card-plain" style={{ display: 'grid', gap: 14 }}>
-      <form
-        onSubmit={runNow}
-        style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
-      >
-        <label className="field" style={{ minWidth: 240, flex: '1 1 240px' }}>
-          <span>סוד מנהל</span>
+    <div className="card-plain ingestion-card">
+      <form onSubmit={runNow} className="ingestion-form">
+        <label className="field ingestion-secret">
+          <span className="field-label">סוד מנהל</span>
           <input
             type="password"
             className="input"
             value={secret}
             onChange={(event) => setSecret(event.target.value)}
-            autoComplete="off"
+            autoComplete="current-password"
             required
             disabled={isPending}
             placeholder="CRON_SECRET"
@@ -75,20 +72,18 @@ export function RunIngestionButton() {
         <button type="submit" disabled={isPending} className="btn btn-primary">
           {isPending ? 'מושך…' : 'משיכת חדשות עכשיו'}
         </button>
-        <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>
+        <span className="form-help">
           מריץ ingestion מוגן על כל המקורות המופעלים. הפעולה עשויה להימשך מספר דקות.
         </span>
       </form>
 
       {state.status === 'ok' && state.summary && (
         <div
+          className="ingestion-result"
+          role="status"
+          aria-live="polite"
           style={{
-            fontSize: 13,
             fontFamily: 'ui-monospace, Menlo, monospace',
-            borderTop: '1px solid var(--border)',
-            paddingTop: 14,
-            display: 'grid',
-            gap: 4,
           }}
         >
           <div>
@@ -125,14 +120,7 @@ export function RunIngestionButton() {
       )}
 
       {state.status === 'error' && (
-        <div
-          style={{
-            fontSize: 13,
-            fontFamily: 'ui-monospace, Menlo, monospace',
-            borderTop: '1px solid var(--border)',
-            paddingTop: 14,
-          }}
-        >
+        <div className="ingestion-result" role="alert">
           <span style={{ color: 'var(--ink-muted)' }}>נכשל:</span> {state.message}
         </div>
       )}

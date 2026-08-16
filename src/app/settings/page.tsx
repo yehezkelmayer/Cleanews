@@ -40,7 +40,7 @@ export default async function SettingsPage() {
 
   return (
     <main className="shell-settings">
-      <h1 style={{ fontSize: 32 }}>הגדרות</h1>
+      <h1 className="page-title">הגדרות</h1>
 
       {/* ─── Fetch news ─── */}
       <section className="settings-section">
@@ -55,22 +55,22 @@ export default async function SettingsPage() {
         {sources.map((s) => {
           const telegram = isTelegramSource(s.rss_url);
           return (
-            <div key={s.id} className="card-plain" style={{ display: 'grid', gap: 14 }}>
+            <div key={s.id} className="card-plain settings-card">
               <div className="grid-2">
                 <div className="field">
-                  <label>שם</label>
-                  <input className="input" value={s.name} readOnly />
+                  <label htmlFor={`source-name-${s.id}`}>שם</label>
+                  <input id={`source-name-${s.id}`} className="input" value={s.name} readOnly />
                 </div>
                 <div className="field">
-                  <label>אתר</label>
-                  <input className="input" value={s.website_url} readOnly />
+                  <label htmlFor={`source-website-${s.id}`}>אתר</label>
+                  <input id={`source-website-${s.id}`} className="input input-ltr" value={s.website_url} readOnly />
                 </div>
                 <div className="field full-span">
-                  <label>כתובת RSS</label>
-                  <input className="input" value={s.rss_url} readOnly />
+                  <label htmlFor={`source-rss-${s.id}`}>כתובת RSS</label>
+                  <input id={`source-rss-${s.id}`} className="input input-ltr" value={s.rss_url} readOnly />
                 </div>
               </div>
-              <div className="row-between">
+              <div className="row-between settings-actions">
                 <div className="row-flex">
                   {telegram && <span className="tag tag-topic tag-topic-sm">טלגרם</span>}
                   <SegControl
@@ -107,21 +107,25 @@ export default async function SettingsPage() {
 
         <details className="details-card">
           <summary>הוספת ערוץ טלגרם</summary>
-          <form action={addTelegramChannelAction} style={{ display: 'grid', gap: 14, marginTop: 16 }}>
+          <form action={addTelegramChannelAction} className="stack-form details-form">
             <div className="field">
-              <label>שם המשתמש בערוץ</label>
+              <label htmlFor="telegram-handle">שם המשתמש בערוץ</label>
               <input
+                id="telegram-handle"
                 name="handle"
                 required
                 className="input"
                 placeholder="@amitsegal או t.me/amitsegal"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </div>
             <div className="field">
-              <label>שם תצוגה (אופציונלי)</label>
-              <input name="name" className="input" placeholder="עמית סגל" />
+              <label htmlFor="telegram-name">שם תצוגה (אופציונלי)</label>
+              <input id="telegram-name" name="name" className="input" placeholder="עמית סגל" />
             </div>
-            <div>
+            <div className="form-actions">
               <button type="submit" className="btn btn-tel">
                 הוספת ערוץ
               </button>
@@ -133,33 +137,44 @@ export default async function SettingsPage() {
           <summary>הוספת מקור מותאם אישית</summary>
           <form
             action={createSourceAction}
-            className="grid-2"
-            style={{ marginTop: 16 }}
+            className="grid-2 details-form"
           >
             <div className="field">
-              <label>שם</label>
-              <input name="name" required className="input" placeholder="לדוגמה: כלכליסט" />
+              <label htmlFor="custom-source-name">שם</label>
+              <input id="custom-source-name" name="name" required className="input" placeholder="לדוגמה: כלכליסט" />
             </div>
             <div className="field">
-              <label>אתר</label>
+              <label htmlFor="custom-source-website">אתר</label>
               <input
+                id="custom-source-website"
+                type="url"
                 name="website_url"
                 required
-                className="input"
+                className="input input-ltr"
                 placeholder="https://example.co.il"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </div>
             <div className="field full-span">
-              <label>כתובת RSS</label>
+              <label htmlFor="custom-source-rss">כתובת RSS</label>
               <input
+                id="custom-source-rss"
+                type="url"
                 name="rss_url"
                 required
-                className="input"
+                className="input input-ltr"
                 placeholder="https://example.co.il/rss"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </div>
             <input type="hidden" name="enabled" value="on" />
-            <div className="full-span">
+            <div className="full-span form-actions">
               <button type="submit" className="btn btn-secondary">
                 הוספה
               </button>
@@ -173,31 +188,32 @@ export default async function SettingsPage() {
         <h2>נושאים</h2>
 
         {topics.map((t) => (
-          <div key={t.id} className="card-plain" style={{ display: 'grid', gap: 14 }}>
-            <form action={updateTopicAction} style={{ display: 'grid', gap: 14 }}>
+          <div key={t.id} className="card-plain settings-card">
+            <form action={updateTopicAction} className="stack-form">
               <input type="hidden" name="id" value={t.id} />
               <input type="hidden" name="enabled" value={t.enabled ? 'on' : ''} />
               <div className="field">
-                <label>שם</label>
-                <input name="name" defaultValue={t.name} required className="input" />
+                <label htmlFor={`topic-name-${t.id}`}>שם</label>
+                <input id={`topic-name-${t.id}`} name="name" defaultValue={t.name} required className="input" />
               </div>
               <div className="field">
-                <label>מילות מפתח להתאמה</label>
+                <label htmlFor={`topic-description-${t.id}`}>מילות מפתח להתאמה</label>
                 <textarea
+                  id={`topic-description-${t.id}`}
                   name="description"
                   defaultValue={t.description}
                   rows={2}
                   className="input"
                 />
               </div>
-              <div>
+              <div className="form-actions">
                 <button type="submit" className="btn btn-secondary">
                   שמירה
                 </button>
               </div>
             </form>
 
-            <div className="row-between">
+            <div className="row-between settings-actions">
               <SegControl
                 name="enabled"
                 value={t.enabled ? 'true' : 'false'}
@@ -220,31 +236,15 @@ export default async function SettingsPage() {
             <summary>הוספה מקטלוג נושאים</summary>
             <form
               action={addTopicPresetsAction}
-              style={{ marginTop: 16, display: 'grid', gap: 14 }}
+              className="stack-form details-form"
             >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '6px 20px',
-                }}
-              >
+              <div className="choice-grid">
                 {availableTopicPresets.map((p) => (
-                  <label
-                    key={p.name}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 8,
-                      fontSize: 13,
-                      color: 'var(--ink-body-soft)',
-                    }}
-                  >
+                  <label key={p.name} className="choice-row">
                     <input
                       type="checkbox"
                       name="preset_topic"
                       value={p.name}
-                      style={{ marginTop: 3, accentColor: 'var(--violet)' }}
                     />
                     <span>
                       <strong style={{ color: 'var(--ink)' }}>{p.name}</strong>{' '}
@@ -253,7 +253,7 @@ export default async function SettingsPage() {
                   </label>
                 ))}
               </div>
-              <div>
+              <div className="form-actions">
                 <button type="submit" className="btn btn-primary">
                   הוספת הנושאים המסומנים
                 </button>
@@ -266,15 +266,16 @@ export default async function SettingsPage() {
           <summary>הוספת נושא חדש</summary>
           <form
             action={createTopicAction}
-            style={{ display: 'grid', gap: 14, marginTop: 16 }}
+            className="stack-form details-form"
           >
             <div className="field">
-              <label>שם</label>
-              <input name="name" required className="input" placeholder="לדוגמה: אנרגיה" />
+              <label htmlFor="new-topic-name">שם</label>
+              <input id="new-topic-name" name="name" required className="input" placeholder="לדוגמה: אנרגיה" />
             </div>
             <div className="field">
-              <label>מילות מפתח להתאמה</label>
+              <label htmlFor="new-topic-description">מילות מפתח להתאמה</label>
               <textarea
+                id="new-topic-description"
                 name="description"
                 rows={2}
                 className="input"
@@ -282,7 +283,7 @@ export default async function SettingsPage() {
               />
             </div>
             <input type="hidden" name="enabled" value="on" />
-            <div>
+            <div className="form-actions">
               <button type="submit" className="btn btn-secondary">
                 הוספה
               </button>
@@ -295,7 +296,7 @@ export default async function SettingsPage() {
       <section className="settings-section">
         <h2>העדפות פיד</h2>
 
-        <div>
+        <div className="settings-preference">
           <div style={{ fontSize: 13, color: 'var(--ink-placeholder)', marginBottom: 8 }}>
             גיל כתבה מרבי (ברירת מחדל)
           </div>

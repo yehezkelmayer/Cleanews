@@ -26,6 +26,8 @@ export function SegControl({
           key={opt.value}
           type="button"
           className="pill-btn"
+          role="radio"
+          aria-checked={value === opt.value}
           data-active={value === opt.value}
           disabled={pending}
           onClick={() => {

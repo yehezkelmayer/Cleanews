@@ -1,10 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { TopNav } from './TopNav';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Cleanews',
   description: 'קורא חדשות בטקסט בלבד',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  colorScheme: 'light',
+  themeColor: '#faf9fd',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

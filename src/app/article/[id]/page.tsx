@@ -59,7 +59,7 @@ export default async function ArticlePage({
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        style={{ fontSize: 14, color: 'var(--violet)' }}
+        className="reader-original"
       >
         פתיחת הכתבה המקורית ↗
       </a>

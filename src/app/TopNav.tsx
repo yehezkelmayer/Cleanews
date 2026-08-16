@@ -10,7 +10,7 @@ export function TopNav() {
   const isSettings = pathname.startsWith('/settings');
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="ניווט ראשי">
       <div className="nav-links">
         <Link href="/" className="nav-link" aria-current={isFeed ? 'page' : undefined}>
           פיד
@@ -23,10 +23,10 @@ export function TopNav() {
           הגדרות
         </Link>
       </div>
-      <span className="nav-brand" style={{ marginInlineStart: 'auto' }}>
+      <Link href="/" className="nav-brand" aria-label="Cleanews — חזרה לפיד">
         <LogoMark />
-        <span>Cleanews</span>
-      </span>
+        <span className="nav-brand-text">Cleanews</span>
+      </Link>
     </nav>
   );
 }

@@ -18,11 +18,12 @@ export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
   const items = presets.filter((p) => p.group === group);
 
   return (
-    <form action={addSourcePresetsAction} style={{ display: 'grid', gap: 14 }}>
+    <form action={addSourcePresetsAction} className="stack-form">
       <div className="field">
-        <label>קטגוריה</label>
+        <label htmlFor="source-catalog-group">קטגוריה</label>
         <div className="select-wrap">
           <select
+            id="source-catalog-group"
             className="input"
             value={group}
             onChange={(e) => setGroup(e.target.value as Group)}
@@ -41,29 +42,13 @@ export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
           כל המקורות בקטגוריה זו כבר נוספו.
         </p>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '6px 20px',
-          }}
-        >
+        <div className="choice-grid">
           {items.map((preset) => (
-            <label
-              key={preset.rss_url}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                fontSize: 13,
-                color: 'var(--ink-body-soft)',
-              }}
-            >
+            <label key={preset.rss_url} className="choice-row">
               <input
                 type="checkbox"
                 name="preset_rss"
                 value={preset.rss_url}
-                style={{ marginTop: 3, accentColor: 'var(--violet)' }}
               />
               <span>
                 <strong style={{ color: 'var(--ink)' }}>{preset.name}</strong>{' '}
@@ -76,7 +61,7 @@ export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
         </div>
       )}
 
-      <div>
+      <div className="form-actions">
         <button type="submit" className="btn btn-primary">
           הוספת המקורות המסומנים
         </button>

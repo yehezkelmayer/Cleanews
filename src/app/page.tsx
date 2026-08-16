@@ -71,10 +71,10 @@ export default async function FeedPage({
           </p>
         </div>
       ) : (
-        <div className="feed-layout">
-          <div>
-            {featured && <FeaturedCard item={featured} />}
+        <div className="feed-layout" data-has-featured={Boolean(featured)}>
+          {featured && <FeaturedCard item={featured} />}
 
+          <section className="feed-main" aria-label="כתבות מאתרי חדשות">
             {restWebsite.length === 0 && !featured ? (
               <div className="card-plain" style={{ padding: 24, textAlign: 'center' }}>
                 <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
@@ -88,7 +88,7 @@ export default async function FeedPage({
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
           <aside className="tg-rail">
             <div className="tg-rail-title">
@@ -118,9 +118,9 @@ function FeaturedCard({ item }: { item: FeedItem }) {
   const topic = item.topics[0];
   const live = isLive(item.published_at);
   return (
-    <Link href={`/article/${item.id}`} style={{ color: 'inherit' }}>
+    <Link href={`/article/${item.id}`} className="card-link featured-link">
       <article className="feed-featured card-in">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div className="featured-meta">
           {live && (
             <span className="tag-live">
               <span className="pulse-dot" style={{ width: 7, height: 7 }} />
@@ -144,7 +144,7 @@ function FeedCard({ item, delay }: { item: FeedItem; delay: number }) {
   const topic = item.topics[0];
   const live = isLive(item.published_at);
   return (
-    <Link href={`/article/${item.id}`} style={{ color: 'inherit' }}>
+    <Link href={`/article/${item.id}`} className="card-link">
       <article
         className="feed-card card-in"
         style={{ animationDelay: `${delay * 0.05}s` }}
@@ -172,7 +172,7 @@ function FeedCard({ item, delay }: { item: FeedItem; delay: number }) {
 function TelegramCard({ item }: { item: FeedItem }) {
   const live = isLive(item.published_at);
   return (
-    <Link href={`/article/${item.id}`} style={{ color: 'inherit' }}>
+    <Link href={`/article/${item.id}`} className="card-link tg-card-link">
       <article className="tg-card">
         <div className="card-meta">
           <span>

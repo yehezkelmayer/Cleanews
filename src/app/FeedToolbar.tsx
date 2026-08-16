@@ -65,60 +65,83 @@ export function FeedToolbar({
   ];
 
   return (
-    <div className="toolbar">
+    <div className="toolbar" aria-busy={pending}>
       <div className="search-wrap">
         <SearchIcon />
         <input
+          type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="חיפוש כתבות..."
-          disabled={pending}
+          aria-label="חיפוש כתבות"
+          enterKeyHint="search"
+          inputMode="search"
+          autoComplete="off"
+          spellCheck={false}
         />
+        {search && (
+          <button
+            type="button"
+            className="search-clear"
+            aria-label="ניקוי החיפוש"
+            onClick={() => setSearch('')}
+          >
+            ×
+          </button>
+        )}
       </div>
 
-      <div className="pill-group" role="group" aria-label="מיון">
-        {sortOpts.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            className="pill-btn"
-            data-active={sortMode === o.value}
-            disabled={pending}
-            onClick={() => setParam('sort', o.value === 'newest' ? null : o.value)}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
+      <div className="toolbar-controls">
+        <div className="pill-group" role="group" aria-label="מיון">
+          {sortOpts.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              className="pill-btn"
+              data-active={sortMode === o.value}
+              aria-pressed={sortMode === o.value}
+              disabled={pending}
+              onClick={() => setParam('sort', o.value === 'newest' ? null : o.value)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="pill-group" role="group" aria-label="סינון נושאים">
-        {onlyOpts.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            className="pill-btn"
-            data-active={onlyMatchingTopics === (o.value === 'on')}
-            disabled={pending}
-            onClick={() => setParam('only', o.value)}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
+        <div className="pill-group" role="group" aria-label="סינון נושאים">
+          {onlyOpts.map((o) => {
+            const active = onlyMatchingTopics === (o.value === 'on');
+            return (
+              <button
+                key={o.value}
+                type="button"
+                className="pill-btn"
+                data-active={active}
+                aria-pressed={active}
+                disabled={pending}
+                onClick={() => setParam('only', o.value)}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
 
-      <div className="pill-group" role="group" aria-label="טווח זמן">
-        {ageOpts.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            className="pill-btn"
-            data-active={String(maxAgeHours) === o.value}
-            disabled={pending}
-            onClick={() => setParam('age', o.value)}
-          >
-            {o.label}
-          </button>
-        ))}
+        <div className="pill-group" role="group" aria-label="טווח זמן">
+          {ageOpts.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              className="pill-btn"
+              data-active={String(maxAgeHours) === o.value}
+              aria-pressed={String(maxAgeHours) === o.value}
+              disabled={pending}
+              onClick={() => setParam('age', o.value)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
