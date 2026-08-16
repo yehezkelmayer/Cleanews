@@ -14,6 +14,13 @@ function first(v: string | string[] | undefined): string | null {
   return null;
 }
 
+function parseIntParam(v: string | string[] | undefined): number | null {
+  const s = first(v);
+  if (!s) return null;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function isLive(iso: string | null): boolean {
   if (!iso) return false;
   const t = new Date(iso).getTime();
@@ -40,8 +47,15 @@ export default async function FeedPage({
   const sortParam = first(sp.sort);
   const onlyParam = first(sp.only);
   const ageParam = first(sp.age);
+  const sourceId = parseIntParam(sp.source);
+  const topicId = parseIntParam(sp.topic);
 
-  const settings = await repo.getSettings();
+  const [settings, sources, topics] = await Promise.all([
+    repo.getSettings(),
+    repo.enabledSources(),
+    repo.enabledTopics(),
+  ]);
+
   const sortMode: 'newest' | 'relevance' =
     sortParam === 'relevance' ? 'relevance' : 'newest';
   const onlyMatchingTopics =
@@ -54,6 +68,8 @@ export default async function FeedPage({
     onlyMatchingTopics,
     sortMode,
     maxAgeHours,
+    sourceId,
+    topicId,
   });
 
   const filtered = q ? items.filter((i) => matchesSearch(i, q)) : items;
@@ -70,6 +86,10 @@ export default async function FeedPage({
         sortMode={sortMode}
         onlyMatchingTopics={onlyMatchingTopics}
         maxAgeHours={maxAgeHours}
+        sources={sources.map((s) => ({ id: s.id, name: s.name }))}
+        topics={topics.map((t) => ({ id: t.id, name: t.name }))}
+        sourceId={sourceId}
+        topicId={topicId}
       />
 
       {filtered.length === 0 ? (
