@@ -1,5 +1,6 @@
 import { repo } from '@/lib/repo';
 import { SOURCE_PRESETS, SOURCE_GROUP_LABELS, TOPIC_PRESETS } from '@/lib/presets';
+import { RunIngestionButton } from './RunIngestionButton';
 import {
   addSourcePresetsAction,
   addTopicPresetsAction,
@@ -15,6 +16,7 @@ import {
 } from './actions';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export default async function SettingsPage() {
   const [sources, topics, settings] = await Promise.all([
@@ -45,6 +47,12 @@ export default async function SettingsPage() {
   return (
     <div className="font-sans space-y-12">
       <h1 className="text-2xl font-semibold">Settings</h1>
+
+      {/* ─────────── Run ingestion ─────────── */}
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold border-b border-app pb-1">Fetch news</h2>
+        <RunIngestionButton />
+      </section>
 
       {/* ─────────── News Sources ─────────── */}
       <section className="space-y-4">
