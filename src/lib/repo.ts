@@ -125,9 +125,13 @@ export const repo = {
     onlyMatchingTopics: boolean;
     sortMode: 'newest' | 'relevance';
     maxAgeHours: number;
+    sourceId?: number | null;
+    topicId?: number | null;
     limit?: number;
   }): Promise<FeedItem[]> {
     const limit = opts.limit ?? 200;
+    const sourceId = opts.sourceId ?? null;
+    const topicId = opts.topicId ?? null;
     const rows = await sql<FeedItem[]>`
       WITH filtered AS (
         SELECT a.*, s.name AS source_name
@@ -136,6 +140,11 @@ export const repo = {
         WHERE s.enabled = TRUE
           AND (a.published_at IS NULL
                OR a.published_at >= NOW() - (${opts.maxAgeHours}::int || ' hours')::interval)
+          AND (${sourceId}::int IS NULL OR s.id = ${sourceId})
+          AND (${topicId}::int IS NULL OR EXISTS (
+            SELECT 1 FROM article_topics at2
+            WHERE at2.article_id = a.id AND at2.topic_id = ${topicId}
+          ))
       ),
       agg AS (
         SELECT f.*,

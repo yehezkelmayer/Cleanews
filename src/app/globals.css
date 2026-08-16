@@ -228,6 +228,41 @@ textarea.input { min-height: 90px; resize: vertical; }
 .section { display: grid; gap: var(--space-4); }
 .section > h2 { font-size: 20px; margin: 0; }
 
+/* ── feed split layout ── */
+.feed-layout {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 960px) {
+  .feed-layout {
+    /* Sidebar (Telegram) is second in DOM. In RTL, second column is visual LEFT. */
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+}
+.feed-column-title {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-divider);
+  display: flex; align-items: center;
+}
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+.feed-sidebar { min-width: 0; }
+.feed-sidebar-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .grid-1 { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
 .full-span { grid-column: 1 / -1; }
