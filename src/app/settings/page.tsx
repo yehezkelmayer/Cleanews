@@ -1,5 +1,8 @@
 import { repo } from '@/lib/repo';
+import { SOURCE_PRESETS, SOURCE_GROUP_LABELS, TOPIC_PRESETS } from '@/lib/presets';
 import {
+  addSourcePresetsAction,
+  addTopicPresetsAction,
   createSourceAction,
   createTopicAction,
   deleteSourceAction,
@@ -25,6 +28,20 @@ export default async function SettingsPage() {
     sourceTopicMap.set(s.id, await repo.getSourceTopicIds(s.id));
   }
 
+  const existingRssUrls = new Set(sources.map((s) => s.rss_url));
+  const existingTopicNames = new Set(topics.map((t) => t.name.toLowerCase()));
+
+  const groupedSourcePresets = (['israel-hebrew', 'israel-english', 'world-news', 'tech'] as const).map(
+    (group) => ({
+      group,
+      label: SOURCE_GROUP_LABELS[group],
+      items: SOURCE_PRESETS.filter((p) => p.group === group && !existingRssUrls.has(p.rss_url)),
+    }),
+  );
+  const availableTopicPresets = TOPIC_PRESETS.filter(
+    (p) => !existingTopicNames.has(p.name.toLowerCase()),
+  );
+
   return (
     <div className="font-sans space-y-12">
       <h1 className="text-2xl font-semibold">Settings</h1>
@@ -32,6 +49,51 @@ export default async function SettingsPage() {
       {/* ─────────── News Sources ─────────── */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold border-b border-app pb-1">News Sources</h2>
+
+        {groupedSourcePresets.some((g) => g.items.length > 0) && (
+          <details className="border border-app rounded p-3" open>
+            <summary className="cursor-pointer text-sm font-semibold">
+              Quick add from catalog ({groupedSourcePresets.reduce((n, g) => n + g.items.length, 0)} available)
+            </summary>
+            <form action={addSourcePresetsAction} className="mt-3 space-y-4 text-sm">
+              {groupedSourcePresets.map(
+                (g) =>
+                  g.items.length > 0 && (
+                    <fieldset key={g.group} className="border border-app rounded p-2">
+                      <legend className="px-1 muted text-xs">{g.label}</legend>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                        {g.items.map((preset) => (
+                          <label key={preset.rss_url} className="flex items-start gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              name="preset_rss"
+                              value={preset.rss_url}
+                              className="mt-1"
+                            />
+                            <span>
+                              <span className="font-semibold">{preset.name}</span>
+                              <span className="muted"> — {new URL(preset.website_url).hostname}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ),
+              )}
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  className="px-3 py-1 border border-app rounded hover:underline"
+                >
+                  Add selected sources
+                </button>
+                <span className="muted text-xs">
+                  Added sources are enabled by default. If an RSS URL fetch fails, disable or edit it below.
+                </span>
+              </div>
+            </form>
+          </details>
+        )}
 
         <ul className="space-y-3">
           {sources.length === 0 && <li className="muted text-sm">No sources yet.</li>}
@@ -153,6 +215,35 @@ export default async function SettingsPage() {
       {/* ─────────── Topics ─────────── */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold border-b border-app pb-1">Topics</h2>
+
+        {availableTopicPresets.length > 0 && (
+          <details className="border border-app rounded p-3" open>
+            <summary className="cursor-pointer text-sm font-semibold">
+              Quick add from catalog ({availableTopicPresets.length} available)
+            </summary>
+            <form action={addTopicPresetsAction} className="mt-3 space-y-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                {availableTopicPresets.map((preset) => (
+                  <label key={preset.name} className="flex items-start gap-2 text-xs">
+                    <input type="checkbox" name="preset_topic" value={preset.name} className="mt-1" />
+                    <span>
+                      <span className="font-semibold">{preset.name}</span>
+                      <span className="muted"> — {preset.description.slice(0, 90)}…</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <button type="submit" className="px-3 py-1 border border-app rounded hover:underline">
+                  Add selected topics
+                </button>
+                <span className="muted text-xs">
+                  Descriptions include Hebrew + English keywords used by the matcher.
+                </span>
+              </div>
+            </form>
+          </details>
+        )}
 
         <ul className="space-y-3">
           {topics.length === 0 && <li className="muted text-sm">No topics yet.</li>}

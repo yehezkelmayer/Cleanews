@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { repo } from '@/lib/repo';
 import { sourceInput, topicInput, settingsInput } from '@/lib/validation';
+import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
 
 function parseInt10(v: FormDataEntryValue | null): number {
   const n = parseInt(String(v ?? ''), 10);
@@ -82,6 +83,41 @@ export async function toggleTopicAction(formData: FormData) {
   const id = parseInt10(formData.get('id'));
   const enabled = formData.get('enabled') === 'true';
   await repo.updateTopic(id, { enabled: !enabled });
+  revalidatePath('/settings');
+}
+
+export async function addSourcePresetsAction(formData: FormData) {
+  const selected = new Set(formData.getAll('preset_rss').map(String));
+  if (selected.size === 0) return;
+  const existing = await repo.listSources();
+  const existingUrls = new Set(existing.map((s) => s.rss_url));
+  for (const preset of SOURCE_PRESETS) {
+    if (!selected.has(preset.rss_url)) continue;
+    if (existingUrls.has(preset.rss_url)) continue;
+    await repo.createSource({
+      name: preset.name,
+      website_url: preset.website_url,
+      rss_url: preset.rss_url,
+      enabled: true,
+    });
+  }
+  revalidatePath('/settings');
+}
+
+export async function addTopicPresetsAction(formData: FormData) {
+  const selected = new Set(formData.getAll('preset_topic').map(String));
+  if (selected.size === 0) return;
+  const existing = await repo.listTopics();
+  const existingNames = new Set(existing.map((t) => t.name.toLowerCase()));
+  for (const preset of TOPIC_PRESETS) {
+    if (!selected.has(preset.name)) continue;
+    if (existingNames.has(preset.name.toLowerCase())) continue;
+    await repo.createTopic({
+      name: preset.name,
+      description: preset.description,
+      enabled: true,
+    });
+  }
   revalidatePath('/settings');
 }
 
