@@ -53,45 +53,49 @@ export default async function SettingsPage() {
       <section className="settings-section">
         <h2>מקורות חדשות</h2>
 
-        {sources.map((s) => {
-          const telegram = isTelegramSource(s.rss_url);
-          return (
-            <div key={s.id} className="card-plain" style={{ display: 'grid', gap: 14 }}>
-              <div className="grid-2">
-                <div className="field">
-                  <label>שם</label>
-                  <input className="input" value={s.name} readOnly />
+        {sources.length > 0 && (
+          <div className="list-scroll">
+            {sources.map((s) => {
+              const telegram = isTelegramSource(s.rss_url);
+              let host = s.website_url;
+              try { host = new URL(s.website_url).hostname; } catch { /* keep raw URL */ }
+              return (
+                <div key={s.id} className="list-row">
+                  <div className="list-row-main">
+                    <span className="list-row-name">
+                      {s.name}
+                      {telegram && (
+                        <span className="tag tag-topic tag-topic-sm" style={{ marginInlineStart: 8 }}>
+                          טלגרם
+                        </span>
+                      )}
+                    </span>
+                    <span className="list-row-sub">{host}</span>
+                  </div>
+                  <div className="list-row-actions">
+                    <SegControl
+                      name="enabled"
+                      value={s.enabled ? 'true' : 'false'}
+                      options={ENABLE_OPTS}
+                      action={setSourceEnabledAction}
+                      extra={{ id: String(s.id) }}
+                    />
+                    <form action={deleteSourceAction}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <button type="submit" className="btn-danger-ghost">
+                        מחיקה
+                      </button>
+                    </form>
+                  </div>
                 </div>
-                <div className="field">
-                  <label>אתר</label>
-                  <input className="input" value={s.website_url} readOnly />
-                </div>
-                <div className="field full-span">
-                  <label>כתובת RSS</label>
-                  <input className="input" value={s.rss_url} readOnly />
-                </div>
-              </div>
-              <div className="row-between">
-                <div className="row-flex">
-                  {telegram && <span className="tag tag-topic tag-topic-sm">טלגרם</span>}
-                  <SegControl
-                    name="enabled"
-                    value={s.enabled ? 'true' : 'false'}
-                    options={ENABLE_OPTS}
-                    action={setSourceEnabledAction}
-                    extra={{ id: String(s.id) }}
-                  />
-                </div>
-                <form action={deleteSourceAction}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <button type="submit" className="btn-danger-ghost">
-                    מחיקה
-                  </button>
-                </form>
-              </div>
+              );
+            })}
+            <div className="list-summary">
+              <span>סה"כ {sources.length} מקורות</span>
+              <span>{sources.filter((s) => s.enabled).length} מופעלים</span>
             </div>
-          );
-        })}
+          </div>
+        )}
 
         <details className="details-card-violet">
           <summary>הוספה מקטלוג מקורות</summary>
