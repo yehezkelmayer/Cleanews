@@ -78,12 +78,6 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'israel-hebrew',
   },
   {
-    name: 'דה מרקר',
-    website_url: 'https://www.themarker.com',
-    rss_url: 'https://www.themarker.com/cmlink/1.144',
-    group: 'israel-hebrew',
-  },
-  {
     name: 'ספורט 5',
     website_url: 'https://www.sport5.co.il',
     rss_url: 'https://www.sport5.co.il/rss.aspx?FolderID=64',
@@ -98,7 +92,7 @@ export const SOURCE_PRESETS: SourcePreset[] = [
   {
     name: 'כיכר השבת',
     website_url: 'https://www.kikar.co.il',
-    rss_url: 'https://www.kikar.co.il/Rss.aspx',
+    rss_url: 'https://www.kikar.co.il/feed',
     group: 'israel-hebrew',
   },
   {
@@ -115,8 +109,8 @@ export const SOURCE_PRESETS: SourcePreset[] = [
   },
   {
     name: 'הפרגוד',
-    website_url: 'https://www.hapargod.co.il',
-    rss_url: 'https://www.hapargod.co.il/feed',
+    website_url: 'https://www.haparegod.co.il',
+    rss_url: 'https://www.haparegod.co.il/feed',
     group: 'israel-hebrew',
   },
   {
