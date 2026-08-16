@@ -9,42 +9,51 @@ export function RunIngestionButton() {
   const [state, formAction, isPending] = useActionState(runIngestionNowAction, initialState);
 
   return (
-    <div className="border border-app rounded p-3 space-y-2">
-      <form action={formAction} className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 border border-app rounded text-sm font-semibold hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isPending ? 'Fetching…' : 'Fetch news now'}
+    <div className="card" style={{ padding: 'var(--space-4)', gap: 'var(--space-3)' }}>
+      <form
+        action={formAction}
+        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}
+      >
+        <button type="submit" disabled={isPending} className="btn btn-primary">
+          {isPending ? 'מושך…' : 'משיכת חדשות עכשיו'}
         </button>
-        <span className="muted text-xs">
-          Runs the ingestion pipeline against all enabled sources. Can take 30–120 seconds
-          on the first run.
+        <span className="text-muted" style={{ fontSize: 13 }}>
+          מריץ ingestion על כל המקורות המופעלים. יכול לקחת 30–120 שניות בפעם הראשונה.
         </span>
       </form>
 
       {state.status === 'ok' && state.summary && (
-        <div className="text-xs font-mono border-t border-app pt-2 space-y-0.5">
+        <div
+          style={{
+            fontSize: 13,
+            fontFamily: 'ui-monospace, Menlo, monospace',
+            borderTop: '2px solid var(--color-divider)',
+            paddingTop: 'var(--space-3)',
+            display: 'grid',
+            gap: 4,
+          }}
+        >
           <div>
-            <span className="muted">Sources checked:</span> {state.summary.sourcesChecked}
+            <span className="text-muted">מקורות שנבדקו:</span> {state.summary.sourcesChecked}
           </div>
           <div>
-            <span className="muted">Articles found:</span> {state.summary.articlesFound}
+            <span className="text-muted">כתבות נמצאו:</span> {state.summary.articlesFound}
           </div>
           <div>
-            <span className="muted">New articles:</span> {state.summary.newArticles}
+            <span className="text-muted">כתבות חדשות:</span> {state.summary.newArticles}
           </div>
           <div>
-            <span className="muted">Errors:</span> {state.summary.errors}
+            <span className="text-muted">שגיאות:</span> {state.summary.errors}
           </div>
           {state.summary.errorDetails.length > 0 && (
-            <details className="mt-2">
-              <summary className="cursor-pointer muted">Show error details</summary>
-              <ul className="mt-1 space-y-0.5">
+            <details style={{ marginTop: 'var(--space-2)' }}>
+              <summary className="text-muted" style={{ cursor: 'pointer' }}>
+                פרטי שגיאה
+              </summary>
+              <ul style={{ margin: '4px 0 0', paddingInlineStart: 'var(--space-4)' }}>
                 {state.summary.errorDetails.slice(0, 20).map((e, i) => (
                   <li key={i}>
-                    <span className="muted">{e.source}:</span> {e.message}
+                    <span className="text-muted">{e.source}:</span> {e.message}
                   </li>
                 ))}
               </ul>
@@ -54,8 +63,15 @@ export function RunIngestionButton() {
       )}
 
       {state.status === 'error' && (
-        <div className="text-xs font-mono border-t border-app pt-2">
-          <span className="muted">Failed:</span> {state.message}
+        <div
+          style={{
+            fontSize: 13,
+            fontFamily: 'ui-monospace, Menlo, monospace',
+            borderTop: '2px solid var(--color-divider)',
+            paddingTop: 'var(--space-3)',
+          }}
+        >
+          <span className="text-muted">נכשל:</span> {state.message}
         </div>
       )}
     </div>

@@ -78,6 +78,14 @@ export async function toggleSourceAction(formData: FormData) {
   revalidatePath('/settings');
 }
 
+export async function setSourceEnabledAction(formData: FormData) {
+  const id = parseInt10(formData.get('id'));
+  const enabled = String(formData.get('enabled')) === 'true';
+  await repo.updateSource(id, { enabled });
+  revalidatePath('/settings');
+  revalidatePath('/');
+}
+
 export async function createTopicAction(formData: FormData) {
   const parsed = topicInput.parse({
     name: formData.get('name'),
@@ -110,6 +118,14 @@ export async function toggleTopicAction(formData: FormData) {
   const enabled = formData.get('enabled') === 'true';
   await repo.updateTopic(id, { enabled: !enabled });
   revalidatePath('/settings');
+}
+
+export async function setTopicEnabledAction(formData: FormData) {
+  const id = parseInt10(formData.get('id'));
+  const enabled = String(formData.get('enabled')) === 'true';
+  await repo.updateTopic(id, { enabled });
+  revalidatePath('/settings');
+  revalidatePath('/');
 }
 
 export async function addTelegramChannelAction(formData: FormData) {
@@ -176,6 +192,29 @@ export async function addTopicPresetsAction(formData: FormData) {
       enabled: true,
     });
   }
+  revalidatePath('/settings');
+}
+
+export async function setFeedPreferenceAction(formData: FormData) {
+  const patch: {
+    only_matching_topics?: boolean;
+    sort_mode?: 'newest' | 'relevance';
+    max_article_age_hours?: number;
+  } = {};
+  if (formData.has('only_matching_topics')) {
+    patch.only_matching_topics = String(formData.get('only_matching_topics')) === 'true';
+  }
+  if (formData.has('sort_mode')) {
+    const v = String(formData.get('sort_mode'));
+    if (v === 'newest' || v === 'relevance') patch.sort_mode = v;
+  }
+  if (formData.has('max_article_age_hours')) {
+    const n = parseInt(String(formData.get('max_article_age_hours')), 10);
+    if (Number.isFinite(n) && n > 0) patch.max_article_age_hours = n;
+  }
+  if (Object.keys(patch).length === 0) return;
+  await repo.updateSettings(patch);
+  revalidatePath('/');
   revalidatePath('/settings');
 }
 

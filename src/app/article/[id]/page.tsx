@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { repo } from '@/lib/repo';
 import { sanitizeArticleHtml } from '@/lib/sanitize';
 import { relativeTime } from '@/lib/format';
+import { GlobeIcon, TelegramIcon, isTelegramSource } from '@/app/icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,49 +18,66 @@ export default async function ArticlePage({
   const article = await repo.getArticle(numId);
   if (!article) notFound();
 
-  // Sanitize again at render time — defence in depth: even a corrupted DB row
-  // cannot inject <img>, <script>, or any disallowed markup.
   const html = sanitizeArticleHtml(article.clean_html ?? '');
+  const telegram = isTelegramSource(article.url);
 
   return (
-    <article className="reader max-w-reader mx-auto">
-      <div className="font-sans text-xs muted mb-2">
-        <Link href="/" className="hover:underline">← Feed</Link>
+    <main className="shell-reader reader">
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <Link href="/" style={{ fontSize: 14, textDecoration: 'none' }}>
+          → חזרה לפיד
+        </Link>
       </div>
-      <h1 className="text-3xl leading-tight font-semibold">{article.title}</h1>
-      <div className="font-sans text-xs muted mt-2">
-        {article.source_name}
-        {article.published_at && (
-          <>
-            {' · '}
-            <time dateTime={article.published_at}>{relativeTime(article.published_at)}</time>
-          </>
-        )}
+
+      <div
+        className="card-meta"
+        style={{ fontSize: 13, marginBottom: 'var(--space-2)' }}
+      >
+        {telegram ? <TelegramIcon /> : <GlobeIcon />}
+        <span>
+          {article.source_name}
+          {article.published_at && ` · ${relativeTime(article.published_at)}`}
+        </span>
       </div>
+
+      <h1 style={{ fontSize: 36, lineHeight: 1.15 }}>{article.title}</h1>
+
+      {telegram && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 'var(--space-2)',
+            flexWrap: 'wrap',
+            margin: 'var(--space-3) 0',
+          }}
+        >
+          <span className="tag tag-outline">טלגרם</span>
+        </div>
+      )}
+
+      <div className="hr" />
 
       {html ? (
         <div
-          className="mt-6"
-          // Content is server-sanitized against a strict allowlist. All media
-          // tags are stripped; only p/h*/ul/ol/li/blockquote/strong/em/a/br remain.
+          style={{ fontSize: 17, lineHeight: 1.8 }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <p className="mt-6 muted text-sm">
-          The article body could not be extracted. Open the original for the full text.
+        <p className="text-muted">
+          לא הצלחנו לחלץ את גוף הכתבה. אפשר לפתוח את המקור המקורי בכפתור למטה.
         </p>
       )}
 
-      <div className="mt-10 font-sans text-sm border-t border-app pt-4">
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          className="underline"
-        >
-          Open original article ↗
-        </a>
-      </div>
-    </article>
+      <div className="hr" />
+
+      <a
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        style={{ fontSize: 14 }}
+      >
+        פתיחת הכתבה המקורית ↗
+      </a>
+    </main>
   );
 }

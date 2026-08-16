@@ -1,23 +1,29 @@
 import { repo } from '@/lib/repo';
-import { SOURCE_PRESETS, SOURCE_GROUP_LABELS, TOPIC_PRESETS } from '@/lib/presets';
+import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
+import { isTelegramSource } from '@/app/icons';
 import { RunIngestionButton } from './RunIngestionButton';
+import { CatalogPicker } from './CatalogPicker';
+import { SegControl } from './SegControl';
 import {
-  addSourcePresetsAction,
   addTelegramChannelAction,
   addTopicPresetsAction,
   createSourceAction,
   createTopicAction,
   deleteSourceAction,
   deleteTopicAction,
-  toggleSourceAction,
-  toggleTopicAction,
-  updateSettingsAction,
-  updateSourceAction,
+  setFeedPreferenceAction,
+  setSourceEnabledAction,
+  setTopicEnabledAction,
   updateTopicAction,
 } from './actions';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
+
+const ENABLE_OPTS = [
+  { value: 'true', label: 'מופעל' },
+  { value: 'false', label: 'מושבת' },
+];
 
 export default async function SettingsPage() {
   const [sources, topics, settings] = await Promise.all([
@@ -26,380 +32,329 @@ export default async function SettingsPage() {
     repo.getSettings(),
   ]);
 
-  const sourceTopicMap = new Map<number, number[]>();
-  for (const s of sources) {
-    sourceTopicMap.set(s.id, await repo.getSourceTopicIds(s.id));
-  }
-
   const existingRssUrls = new Set(sources.map((s) => s.rss_url));
   const existingTopicNames = new Set(topics.map((t) => t.name.toLowerCase()));
 
-  const groupedSourcePresets = (['israel-hebrew', 'israel-english', 'world-news', 'tech'] as const).map(
-    (group) => ({
-      group,
-      label: SOURCE_GROUP_LABELS[group],
-      items: SOURCE_PRESETS.filter((p) => p.group === group && !existingRssUrls.has(p.rss_url)),
-    }),
-  );
+  const catalogAvailable = SOURCE_PRESETS.filter((p) => !existingRssUrls.has(p.rss_url));
   const availableTopicPresets = TOPIC_PRESETS.filter(
     (p) => !existingTopicNames.has(p.name.toLowerCase()),
   );
 
   return (
-    <div className="font-sans space-y-12">
-      <h1 className="text-2xl font-semibold">Settings</h1>
+    <main className="shell-settings">
+      <h1
+        className="accent-strip"
+        style={{ margin: 0 }}
+      >
+        הגדרות
+      </h1>
 
-      {/* ─────────── Run ingestion ─────────── */}
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold border-b border-app pb-1">Fetch news</h2>
+      {/* ─── Fetch news ─── */}
+      <section className="section">
+        <h2>משיכת חדשות</h2>
+        <div className="hr" style={{ margin: 0 }} />
         <RunIngestionButton />
       </section>
 
-      {/* ─────────── News Sources ─────────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold border-b border-app pb-1">News Sources</h2>
+      {/* ─── Sources ─── */}
+      <section className="section">
+        <h2>מקורות חדשות</h2>
+        <div className="hr" style={{ margin: 0 }} />
 
-        {groupedSourcePresets.some((g) => g.items.length > 0) && (
-          <details className="border border-app rounded p-3" open>
-            <summary className="cursor-pointer text-sm font-semibold">
-              Quick add from catalog ({groupedSourcePresets.reduce((n, g) => n + g.items.length, 0)} available)
-            </summary>
-            <form action={addSourcePresetsAction} className="mt-3 space-y-4 text-sm">
-              {groupedSourcePresets.map(
-                (g) =>
-                  g.items.length > 0 && (
-                    <fieldset key={g.group} className="border border-app rounded p-2">
-                      <legend className="px-1 muted text-xs">{g.label}</legend>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                        {g.items.map((preset) => (
-                          <label key={preset.rss_url} className="flex items-start gap-2 text-xs">
-                            <input
-                              type="checkbox"
-                              name="preset_rss"
-                              value={preset.rss_url}
-                              className="mt-1"
-                            />
-                            <span>
-                              <span className="font-semibold">{preset.name}</span>
-                              <span className="muted"> — {new URL(preset.website_url).hostname}</span>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                  ),
-              )}
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  className="px-3 py-1 border border-app rounded hover:underline"
-                >
-                  Add selected sources
-                </button>
-                <span className="muted text-xs">
-                  Added sources are enabled by default. If an RSS URL fetch fails, disable or edit it below.
-                </span>
-              </div>
-            </form>
-          </details>
-        )}
-
-        <ul className="space-y-3">
-          {sources.length === 0 && <li className="muted text-sm">No sources yet.</li>}
-          {sources.map((s) => (
-            <li key={s.id} className="border border-app rounded p-3 space-y-2">
-              <form action={updateSourceAction} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                <input type="hidden" name="id" value={s.id} />
-                <label className="flex flex-col">
-                  Name
-                  <input
-                    name="name"
-                    defaultValue={s.name}
-                    required
-                    className="border border-app rounded px-2 py-1 bg-transparent"
-                  />
-                </label>
-                <label className="flex flex-col">
-                  Website URL
-                  <input
-                    name="website_url"
-                    defaultValue={s.website_url}
-                    required
-                    className="border border-app rounded px-2 py-1 bg-transparent"
-                  />
-                </label>
-                <label className="flex flex-col md:col-span-2">
-                  RSS URL
-                  <input
-                    name="rss_url"
-                    defaultValue={s.rss_url}
-                    required
-                    className="border border-app rounded px-2 py-1 bg-transparent"
-                  />
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="enabled" defaultChecked={s.enabled} />
-                  Enabled
-                </label>
-
-                <fieldset className="md:col-span-2 border border-app rounded p-2">
-                  <legend className="px-1 muted text-xs">Topics for this source (optional)</legend>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    {topics.length === 0 && (
-                      <span className="muted text-xs">Create topics first to link them here.</span>
-                    )}
-                    {topics.map((t) => {
-                      const selected = (sourceTopicMap.get(s.id) ?? []).includes(t.id);
-                      return (
-                        <label key={t.id} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            name="topic_ids"
-                            value={t.id}
-                            defaultChecked={selected}
-                          />
-                          {t.name}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </fieldset>
-
-                <div className="md:col-span-2 flex gap-2">
-                  <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
-                    Save
-                  </button>
+        {sources.map((s) => {
+          const telegram = isTelegramSource(s.rss_url);
+          return (
+            <div key={s.id} className="card" style={{ padding: 'var(--space-4)', gap: 'var(--space-3)' }}>
+              <div className="grid-2">
+                <div className="field">
+                  <label>שם</label>
+                  <input className="input" value={s.name} readOnly />
                 </div>
-              </form>
-
-              <div className="flex gap-2">
-                <form action={toggleSourceAction}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <input type="hidden" name="enabled" value={String(s.enabled)} />
-                  <button className="text-xs muted hover:underline" type="submit">
-                    {s.enabled ? 'Disable' : 'Enable'}
-                  </button>
-                </form>
+                <div className="field">
+                  <label>אתר</label>
+                  <input className="input" value={s.website_url} readOnly />
+                </div>
+                <div className="field full-span">
+                  <label>כתובת RSS</label>
+                  <input className="input" value={s.rss_url} readOnly />
+                </div>
+              </div>
+              <div className="row-between">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  {telegram && <span className="tag tag-outline">טלגרם</span>}
+                  <SegControl
+                    name="enabled"
+                    value={s.enabled ? 'true' : 'false'}
+                    options={ENABLE_OPTS}
+                    action={setSourceEnabledAction}
+                    extra={{ id: String(s.id) }}
+                  />
+                </div>
                 <form action={deleteSourceAction}>
                   <input type="hidden" name="id" value={s.id} />
-                  <button className="text-xs muted hover:underline" type="submit">
-                    Delete
+                  <button type="submit" className="btn btn-ghost">
+                    מחיקה
                   </button>
                 </form>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          );
+        })}
 
-        <details className="border border-app rounded p-3">
-          <summary className="cursor-pointer text-sm font-semibold">Add Telegram channel</summary>
-          <form action={addTelegramChannelAction} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mt-3">
-            <label className="flex flex-col md:col-span-2">
-              Channel handle
+        <details className="card" style={{ padding: 'var(--space-4)' }}>
+          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
+            הוספה מקטלוג מקורות
+          </summary>
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            {catalogAvailable.length === 0 ? (
+              <div className="text-muted" style={{ fontSize: 13 }}>
+                כל המקורות בקטלוג כבר נוספו.
+              </div>
+            ) : (
+              <CatalogPicker presets={catalogAvailable} />
+            )}
+          </div>
+        </details>
+
+        <details className="card" style={{ padding: 'var(--space-4)' }}>
+          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
+            הוספת ערוץ טלגרם
+          </summary>
+          <form
+            action={addTelegramChannelAction}
+            style={{ display: 'grid', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}
+          >
+            <div className="field">
+              <label>שם המשתמש בערוץ</label>
               <input
                 name="handle"
                 required
-                placeholder="@amitsegal  or  t.me/amitsegal"
-                className="border border-app rounded px-2 py-1 bg-transparent"
+                className="input"
+                placeholder="@amitsegal או t.me/amitsegal"
               />
-            </label>
-            <label className="flex flex-col md:col-span-2">
-              Display name (optional)
-              <input
-                name="name"
-                placeholder="Amit Segal"
-                className="border border-app rounded px-2 py-1 bg-transparent"
-              />
-            </label>
-            <div className="md:col-span-2 flex items-center gap-3">
-              <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
-                Add channel
+            </div>
+            <div className="field">
+              <label>שם תצוגה (אופציונלי)</label>
+              <input name="name" className="input" placeholder="עמית סגל" />
+            </div>
+            <div>
+              <button type="submit" className="btn btn-primary">
+                הוספת ערוץ
               </button>
-              <span className="muted text-xs">
-                Uses rsshub.app to convert the public channel to RSS. Only works for public
-                Telegram channels. Common Israeli examples: @AbuAliExpress, @amitsegal,
-                @yinonmagal, @HaPargod.
-              </span>
             </div>
           </form>
         </details>
 
-        <details className="border border-app rounded p-3">
-          <summary className="cursor-pointer text-sm font-semibold">Add Source</summary>
-          <form action={createSourceAction} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mt-3">
-            <label className="flex flex-col">
-              Name
-              <input name="name" required className="border border-app rounded px-2 py-1 bg-transparent" />
-            </label>
-            <label className="flex flex-col">
-              Website URL
-              <input name="website_url" required placeholder="https://example.com"
-                className="border border-app rounded px-2 py-1 bg-transparent" />
-            </label>
-            <label className="flex flex-col md:col-span-2">
-              RSS URL
-              <input name="rss_url" required placeholder="https://example.com/rss"
-                className="border border-app rounded px-2 py-1 bg-transparent" />
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="enabled" defaultChecked />
-              Enabled
-            </label>
-            <div className="md:col-span-2">
-              <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
-                Add
+        <details className="card" style={{ padding: 'var(--space-4)' }}>
+          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
+            הוספת מקור מותאם אישית
+          </summary>
+          <form
+            action={createSourceAction}
+            className="grid-2"
+            style={{ marginTop: 'var(--space-3)' }}
+          >
+            <div className="field">
+              <label>שם</label>
+              <input name="name" required className="input" placeholder="לדוגמה: כלכליסט" />
+            </div>
+            <div className="field">
+              <label>אתר</label>
+              <input
+                name="website_url"
+                required
+                className="input"
+                placeholder="https://example.co.il"
+              />
+            </div>
+            <div className="field full-span">
+              <label>כתובת RSS</label>
+              <input
+                name="rss_url"
+                required
+                className="input"
+                placeholder="https://example.co.il/rss"
+              />
+            </div>
+            <input type="hidden" name="enabled" value="on" />
+            <div className="full-span">
+              <button type="submit" className="btn btn-primary">
+                הוספה
               </button>
             </div>
           </form>
         </details>
       </section>
 
-      {/* ─────────── Topics ─────────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold border-b border-app pb-1">Topics</h2>
+      {/* ─── Topics ─── */}
+      <section className="section">
+        <h2>נושאים</h2>
+        <div className="hr" style={{ margin: 0 }} />
+
+        {topics.map((t) => (
+          <div key={t.id} className="card" style={{ padding: 'var(--space-4)', gap: 'var(--space-3)' }}>
+            <form action={updateTopicAction} className="grid-1">
+              <input type="hidden" name="id" value={t.id} />
+              <input type="hidden" name="enabled" value={t.enabled ? 'on' : ''} />
+              <div className="field">
+                <label>שם</label>
+                <input name="name" defaultValue={t.name} required className="input" />
+              </div>
+              <div className="field">
+                <label>מילות מפתח להתאמה</label>
+                <textarea
+                  name="description"
+                  defaultValue={t.description}
+                  rows={2}
+                  className="input"
+                />
+              </div>
+              <div>
+                <button type="submit" className="btn btn-secondary">
+                  שמירה
+                </button>
+              </div>
+            </form>
+
+            <div className="row-between">
+              <SegControl
+                name="enabled"
+                value={t.enabled ? 'true' : 'false'}
+                options={ENABLE_OPTS}
+                action={setTopicEnabledAction}
+                extra={{ id: String(t.id) }}
+              />
+              <form action={deleteTopicAction}>
+                <input type="hidden" name="id" value={t.id} />
+                <button type="submit" className="btn btn-ghost">
+                  מחיקה
+                </button>
+              </form>
+            </div>
+          </div>
+        ))}
 
         {availableTopicPresets.length > 0 && (
-          <details className="border border-app rounded p-3" open>
-            <summary className="cursor-pointer text-sm font-semibold">
-              Quick add from catalog ({availableTopicPresets.length} available)
+          <details className="card" style={{ padding: 'var(--space-4)' }}>
+            <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
+              הוספה מקטלוג נושאים
             </summary>
-            <form action={addTopicPresetsAction} className="mt-3 space-y-3 text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                {availableTopicPresets.map((preset) => (
-                  <label key={preset.name} className="flex items-start gap-2 text-xs">
-                    <input type="checkbox" name="preset_topic" value={preset.name} className="mt-1" />
+            <form action={addTopicPresetsAction} style={{ marginTop: 'var(--space-3)', display: 'grid', gap: 'var(--space-3)' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: 'var(--space-1) var(--space-4)',
+                }}
+              >
+                {availableTopicPresets.map((p) => (
+                  <label
+                    key={p.name}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 'var(--space-2)',
+                      fontSize: 13,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      name="preset_topic"
+                      value={p.name}
+                      style={{ marginTop: 3 }}
+                    />
                     <span>
-                      <span className="font-semibold">{preset.name}</span>
-                      <span className="muted"> — {preset.description.slice(0, 90)}…</span>
+                      <strong>{p.name}</strong>{' '}
+                      <span className="text-muted">— {p.description.slice(0, 80)}…</span>
                     </span>
                   </label>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <button type="submit" className="px-3 py-1 border border-app rounded hover:underline">
-                  Add selected topics
+              <div>
+                <button type="submit" className="btn btn-primary">
+                  הוספת הנושאים המסומנים
                 </button>
-                <span className="muted text-xs">
-                  Descriptions include Hebrew + English keywords used by the matcher.
-                </span>
               </div>
             </form>
           </details>
         )}
 
-        <ul className="space-y-3">
-          {topics.length === 0 && <li className="muted text-sm">No topics yet.</li>}
-          {topics.map((t) => (
-            <li key={t.id} className="border border-app rounded p-3 space-y-2">
-              <form action={updateTopicAction} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                <input type="hidden" name="id" value={t.id} />
-                <label className="flex flex-col">
-                  Name
-                  <input name="name" defaultValue={t.name} required
-                    className="border border-app rounded px-2 py-1 bg-transparent" />
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="enabled" defaultChecked={t.enabled} />
-                  Enabled
-                </label>
-                <label className="flex flex-col md:col-span-2">
-                  Description (keywords used for matching)
-                  <textarea name="description" defaultValue={t.description} rows={2}
-                    className="border border-app rounded px-2 py-1 bg-transparent" />
-                </label>
-                <div className="md:col-span-2 flex gap-2">
-                  <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
-                    Save
-                  </button>
-                </div>
-              </form>
-
-              <div className="flex gap-2">
-                <form action={toggleTopicAction}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="enabled" value={String(t.enabled)} />
-                  <button className="text-xs muted hover:underline" type="submit">
-                    {t.enabled ? 'Disable' : 'Enable'}
-                  </button>
-                </form>
-                <form action={deleteTopicAction}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <button className="text-xs muted hover:underline" type="submit">
-                    Delete
-                  </button>
-                </form>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        <details className="border border-app rounded p-3">
-          <summary className="cursor-pointer text-sm font-semibold">Add Topic</summary>
-          <form action={createTopicAction} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mt-3">
-            <label className="flex flex-col">
-              Name
-              <input name="name" required className="border border-app rounded px-2 py-1 bg-transparent" />
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="enabled" defaultChecked />
-              Enabled
-            </label>
-            <label className="flex flex-col md:col-span-2">
-              Description
-              <textarea name="description" rows={2}
-                className="border border-app rounded px-2 py-1 bg-transparent" />
-            </label>
-            <div className="md:col-span-2">
-              <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
-                Add
+        <details className="card" style={{ padding: 'var(--space-4)' }}>
+          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
+            הוספת נושא חדש
+          </summary>
+          <form
+            action={createTopicAction}
+            style={{ display: 'grid', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}
+          >
+            <div className="field">
+              <label>שם</label>
+              <input name="name" required className="input" placeholder="לדוגמה: אנרגיה" />
+            </div>
+            <div className="field">
+              <label>מילות מפתח להתאמה</label>
+              <textarea
+                name="description"
+                rows={2}
+                className="input"
+                placeholder="מילים שיסמנו כתבות תואמות"
+              />
+            </div>
+            <input type="hidden" name="enabled" value="on" />
+            <div>
+              <button type="submit" className="btn btn-primary">
+                הוספה
               </button>
             </div>
           </form>
         </details>
       </section>
 
-      {/* ─────────── Feed Preferences ─────────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold border-b border-app pb-1">Feed Preferences</h2>
-        <form action={updateSettingsAction} className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <label className="flex items-center gap-2 md:col-span-2">
-            <input
-              type="checkbox"
-              name="only_matching_topics"
-              defaultChecked={settings.only_matching_topics}
-            />
-            Only show matching topics
-          </label>
-          <label className="flex flex-col">
-            Sort
-            <select
-              name="sort_mode"
-              defaultValue={settings.sort_mode}
-              className="border border-app rounded px-2 py-1 bg-transparent"
-            >
-              <option value="newest">Newest</option>
-              <option value="relevance">Relevance</option>
-            </select>
-          </label>
-          <label className="flex flex-col">
-            Maximum article age
-            <select
-              name="max_article_age_hours"
-              defaultValue={settings.max_article_age_hours}
-              className="border border-app rounded px-2 py-1 bg-transparent"
-            >
-              <option value={24}>24 hours</option>
-              <option value={72}>3 days</option>
-              <option value={168}>7 days</option>
-            </select>
-          </label>
-          <div className="md:col-span-2">
-            <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
-              Save preferences
-            </button>
-          </div>
-        </form>
+      {/* ─── Feed preferences ─── */}
+      <section className="section">
+        <h2>העדפות פיד</h2>
+        <div className="hr" style={{ margin: 0 }} />
+
+        <div className="field">
+          <label>הצגת כתבות</label>
+          <SegControl
+            name="only_matching_topics"
+            value={settings.only_matching_topics ? 'true' : 'false'}
+            options={[
+              { value: 'true', label: 'רק נושאים תואמים' },
+              { value: 'false', label: 'כל הכתבות' },
+            ]}
+            action={setFeedPreferenceAction}
+          />
+        </div>
+
+        <div className="field">
+          <label>מיון</label>
+          <SegControl
+            name="sort_mode"
+            value={settings.sort_mode}
+            options={[
+              { value: 'newest', label: 'החדש ביותר' },
+              { value: 'relevance', label: 'רלוונטיות' },
+            ]}
+            action={setFeedPreferenceAction}
+          />
+        </div>
+
+        <div className="field">
+          <label>גיל כתבה מרבי</label>
+          <SegControl
+            name="max_article_age_hours"
+            value={String(settings.max_article_age_hours)}
+            options={[
+              { value: '24', label: '24 שעות' },
+              { value: '72', label: '3 ימים' },
+              { value: '168', label: '7 ימים' },
+            ]}
+            action={setFeedPreferenceAction}
+          />
+        </div>
       </section>
-    </div>
+    </main>
   );
 }
