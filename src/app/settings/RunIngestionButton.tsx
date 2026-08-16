@@ -9,16 +9,16 @@ export function RunIngestionButton() {
   const [state, formAction, isPending] = useActionState(runIngestionNowAction, initialState);
 
   return (
-    <div className="card" style={{ padding: 'var(--space-4)', gap: 'var(--space-3)' }}>
+    <div className="card-plain" style={{ display: 'grid', gap: 14 }}>
       <form
         action={formAction}
-        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
       >
         <button type="submit" disabled={isPending} className="btn btn-primary">
           {isPending ? 'מושך…' : 'משיכת חדשות עכשיו'}
         </button>
-        <span className="text-muted" style={{ fontSize: 13 }}>
-          מריץ ingestion על כל המקורות המופעלים. יכול לקחת 30–120 שניות בפעם הראשונה.
+        <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>
+          מריץ ingestion על כל המקורות המופעלים. עד ~2 דקות בפעם הראשונה.
         </span>
       </form>
 
@@ -27,33 +27,37 @@ export function RunIngestionButton() {
           style={{
             fontSize: 13,
             fontFamily: 'ui-monospace, Menlo, monospace',
-            borderTop: '2px solid var(--color-divider)',
-            paddingTop: 'var(--space-3)',
+            borderTop: '1px solid var(--border)',
+            paddingTop: 14,
             display: 'grid',
             gap: 4,
           }}
         >
           <div>
-            <span className="text-muted">מקורות שנבדקו:</span> {state.summary.sourcesChecked}
+            <span style={{ color: 'var(--ink-muted)' }}>מקורות שנבדקו:</span>{' '}
+            {state.summary.sourcesChecked}
           </div>
           <div>
-            <span className="text-muted">כתבות נמצאו:</span> {state.summary.articlesFound}
+            <span style={{ color: 'var(--ink-muted)' }}>כתבות נמצאו:</span>{' '}
+            {state.summary.articlesFound}
           </div>
           <div>
-            <span className="text-muted">כתבות חדשות:</span> {state.summary.newArticles}
+            <span style={{ color: 'var(--ink-muted)' }}>כתבות חדשות:</span>{' '}
+            {state.summary.newArticles}
           </div>
           <div>
-            <span className="text-muted">שגיאות:</span> {state.summary.errors}
+            <span style={{ color: 'var(--ink-muted)' }}>שגיאות:</span>{' '}
+            {state.summary.errors}
           </div>
           {state.summary.errorDetails.length > 0 && (
-            <details style={{ marginTop: 'var(--space-2)' }}>
-              <summary className="text-muted" style={{ cursor: 'pointer' }}>
+            <details style={{ marginTop: 8 }}>
+              <summary style={{ color: 'var(--ink-muted)', cursor: 'pointer' }}>
                 פרטי שגיאה
               </summary>
-              <ul style={{ margin: '4px 0 0', paddingInlineStart: 'var(--space-4)' }}>
+              <ul style={{ margin: '4px 0 0', paddingInlineStart: 16 }}>
                 {state.summary.errorDetails.slice(0, 20).map((e, i) => (
                   <li key={i}>
-                    <span className="text-muted">{e.source}:</span> {e.message}
+                    <span style={{ color: 'var(--ink-muted)' }}>{e.source}:</span> {e.message}
                   </li>
                 ))}
               </ul>
@@ -67,11 +71,11 @@ export function RunIngestionButton() {
           style={{
             fontSize: 13,
             fontFamily: 'ui-monospace, Menlo, monospace',
-            borderTop: '2px solid var(--color-divider)',
-            paddingTop: 'var(--space-3)',
+            borderTop: '1px solid var(--border)',
+            paddingTop: 14,
           }}
         >
-          <span className="text-muted">נכשל:</span> {state.message}
+          <span style={{ color: 'var(--ink-muted)' }}>נכשל:</span> {state.message}
         </div>
       )}
     </div>

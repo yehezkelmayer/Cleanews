@@ -23,58 +23,43 @@ export default async function ArticlePage({
 
   return (
     <main className="shell-reader reader">
-      <div style={{ marginBottom: 'var(--space-4)' }}>
-        <Link href="/" style={{ fontSize: 14, textDecoration: 'none' }}>
-          → חזרה לפיד
-        </Link>
-      </div>
+      <Link href="/" className="reader-back">
+        → חזרה לפיד
+      </Link>
 
-      <div
-        className="card-meta"
-        style={{ fontSize: 13, marginBottom: 'var(--space-2)' }}
-      >
-        {telegram ? <TelegramIcon /> : <GlobeIcon />}
+      <div className="reader-meta">
+        {telegram ? <TelegramIcon size={14} color="var(--violet)" /> : <GlobeIcon size={14} />}
         <span>
           {article.source_name}
           {article.published_at && ` · ${relativeTime(article.published_at)}`}
         </span>
       </div>
 
-      <h1 style={{ fontSize: 36, lineHeight: 1.15 }}>{article.title}</h1>
+      <h1>{article.title}</h1>
 
       {telegram && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 'var(--space-2)',
-            flexWrap: 'wrap',
-            margin: 'var(--space-3) 0',
-          }}
-        >
-          <span className="tag tag-outline">טלגרם</span>
+        <div className="reader-tags">
+          <span className="tag tag-topic">טלגרם</span>
         </div>
       )}
 
-      <div className="hr" />
+      <div className="reader-divider" />
 
       {html ? (
-        <div
-          style={{ fontSize: 17, lineHeight: 1.8 }}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="reader-body" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
-        <p className="text-muted">
-          לא הצלחנו לחלץ את גוף הכתבה. אפשר לפתוח את המקור המקורי בכפתור למטה.
+        <p style={{ color: 'var(--ink-muted)' }}>
+          לא הצלחנו לחלץ את גוף הכתבה. אפשר לפתוח את המקור המקורי בקישור למטה.
         </p>
       )}
 
-      <div className="hr" />
+      <div className="reader-divider-plain" />
 
       <a
         href={article.url}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        style={{ fontSize: 14 }}
+        style={{ fontSize: 14, color: 'var(--violet)' }}
       >
         פתיחת הכתבה המקורית ↗
       </a>

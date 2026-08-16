@@ -1,0 +1,120 @@
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useTransition } from 'react';
+import { SearchIcon } from './icons';
+
+type PillOption<T extends string> = { value: T; label: string };
+
+export function FeedToolbar({
+  initialSearch,
+  sortMode,
+  onlyMatchingTopics,
+  maxAgeHours,
+}: {
+  initialSearch: string;
+  sortMode: 'newest' | 'relevance';
+  onlyMatchingTopics: boolean;
+  maxAgeHours: number;
+}) {
+  const router = useRouter();
+  const params = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  const [search, setSearch] = useState(initialSearch);
+
+  // Debounced search: push to URL 300ms after typing stops.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if ((initialSearch ?? '') === search) return;
+      const next = new URLSearchParams(params?.toString() ?? '');
+      if (search.trim()) next.set('q', search.trim());
+      else next.delete('q');
+      startTransition(() => {
+        router.replace(next.toString() ? `/?${next.toString()}` : '/');
+      });
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [search, initialSearch, params, router]);
+
+  function setParam(key: string, value: string | null) {
+    const next = new URLSearchParams(params?.toString() ?? '');
+    if (value === null || value === '') next.delete(key);
+    else next.set(key, value);
+    startTransition(() => {
+      router.replace(next.toString() ? `/?${next.toString()}` : '/');
+    });
+  }
+
+  const sortOpts: PillOption<'newest' | 'relevance'>[] = [
+    { value: 'newest', label: 'החדש ביותר' },
+    { value: 'relevance', label: 'רלוונטיות' },
+  ];
+  const onlyOpts = [
+    { value: 'on', label: 'תואם לנושאים' },
+    { value: 'off', label: 'הכל' },
+  ];
+  const ageOpts = [
+    { value: '24', label: '24 שעות' },
+    { value: '72', label: '3 ימים' },
+    { value: '168', label: '7 ימים' },
+  ];
+
+  return (
+    <div className="toolbar">
+      <div className="search-wrap">
+        <SearchIcon />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="חיפוש כתבות..."
+          disabled={pending}
+        />
+      </div>
+
+      <div className="pill-group" role="group" aria-label="מיון">
+        {sortOpts.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            className="pill-btn"
+            data-active={sortMode === o.value}
+            disabled={pending}
+            onClick={() => setParam('sort', o.value === 'newest' ? null : o.value)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="pill-group" role="group" aria-label="סינון נושאים">
+        {onlyOpts.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            className="pill-btn"
+            data-active={onlyMatchingTopics === (o.value === 'on')}
+            disabled={pending}
+            onClick={() => setParam('only', o.value)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="pill-group" role="group" aria-label="טווח זמן">
+        {ageOpts.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            className="pill-btn"
+            data-active={String(maxAgeHours) === o.value}
+            disabled={pending}
+            onClick={() => setParam('age', o.value)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

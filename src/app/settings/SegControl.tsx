@@ -1,14 +1,9 @@
 'use client';
 
-import { useId, useTransition } from 'react';
+import { useTransition } from 'react';
 
 export type SegOption = { value: string; label: string };
 
-/**
- * Modernist segmented control. Renders styled radio inputs; on change,
- * calls the provided action with the chosen value (plus optional extra
- * fields), inside a startTransition so navigation isn't blocked.
- */
 export function SegControl({
   name,
   value,
@@ -23,27 +18,25 @@ export function SegControl({
   extra?: Record<string, string>;
 }) {
   const [pending, startTransition] = useTransition();
-  const uid = useId();
 
   return (
-    <div className="seg" role="radiogroup">
+    <div className="pill-group" role="radiogroup">
       {options.map((opt) => (
-        <label key={opt.value} className="seg-opt">
-          <input
-            type="radio"
-            name={`${name}-${uid}`}
-            value={opt.value}
-            checked={value === opt.value}
-            disabled={pending}
-            onChange={() => {
-              const fd = new FormData();
-              fd.set(name, opt.value);
-              if (extra) for (const [k, v] of Object.entries(extra)) fd.set(k, v);
-              startTransition(() => action(fd));
-            }}
-          />
+        <button
+          key={opt.value}
+          type="button"
+          className="pill-btn"
+          data-active={value === opt.value}
+          disabled={pending}
+          onClick={() => {
+            const fd = new FormData();
+            fd.set(name, opt.value);
+            if (extra) for (const [k, v] of Object.entries(extra)) fd.set(k, v);
+            startTransition(() => action(fd));
+          }}
+        >
           {opt.label}
-        </label>
+        </button>
       ))}
     </div>
   );

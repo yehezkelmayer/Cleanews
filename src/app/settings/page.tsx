@@ -34,7 +34,6 @@ export default async function SettingsPage() {
 
   const existingRssUrls = new Set(sources.map((s) => s.rss_url));
   const existingTopicNames = new Set(topics.map((t) => t.name.toLowerCase()));
-
   const catalogAvailable = SOURCE_PRESETS.filter((p) => !existingRssUrls.has(p.rss_url));
   const availableTopicPresets = TOPIC_PRESETS.filter(
     (p) => !existingTopicNames.has(p.name.toLowerCase()),
@@ -42,29 +41,22 @@ export default async function SettingsPage() {
 
   return (
     <main className="shell-settings">
-      <h1
-        className="accent-strip"
-        style={{ margin: 0 }}
-      >
-        הגדרות
-      </h1>
+      <h1 style={{ fontSize: 32 }}>הגדרות</h1>
 
       {/* ─── Fetch news ─── */}
-      <section className="section">
+      <section className="settings-section">
         <h2>משיכת חדשות</h2>
-        <div className="hr" style={{ margin: 0 }} />
         <RunIngestionButton />
       </section>
 
       {/* ─── Sources ─── */}
-      <section className="section">
+      <section className="settings-section">
         <h2>מקורות חדשות</h2>
-        <div className="hr" style={{ margin: 0 }} />
 
         {sources.map((s) => {
           const telegram = isTelegramSource(s.rss_url);
           return (
-            <div key={s.id} className="card" style={{ padding: 'var(--space-4)', gap: 'var(--space-3)' }}>
+            <div key={s.id} className="card-plain" style={{ display: 'grid', gap: 14 }}>
               <div className="grid-2">
                 <div className="field">
                   <label>שם</label>
@@ -80,8 +72,8 @@ export default async function SettingsPage() {
                 </div>
               </div>
               <div className="row-between">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  {telegram && <span className="tag tag-outline">טלגרם</span>}
+                <div className="row-flex">
+                  {telegram && <span className="tag tag-topic tag-topic-sm">טלגרם</span>}
                   <SegControl
                     name="enabled"
                     value={s.enabled ? 'true' : 'false'}
@@ -92,7 +84,7 @@ export default async function SettingsPage() {
                 </div>
                 <form action={deleteSourceAction}>
                   <input type="hidden" name="id" value={s.id} />
-                  <button type="submit" className="btn btn-ghost">
+                  <button type="submit" className="btn-danger-ghost">
                     מחיקה
                   </button>
                 </form>
@@ -101,29 +93,22 @@ export default async function SettingsPage() {
           );
         })}
 
-        <details className="card" style={{ padding: 'var(--space-4)' }}>
-          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
-            הוספה מקטלוג מקורות
-          </summary>
-          <div style={{ marginTop: 'var(--space-3)' }}>
+        <details className="details-card-violet">
+          <summary>הוספה מקטלוג מקורות</summary>
+          <div style={{ marginTop: 16 }}>
             {catalogAvailable.length === 0 ? (
-              <div className="text-muted" style={{ fontSize: 13 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-muted)' }}>
                 כל המקורות בקטלוג כבר נוספו.
-              </div>
+              </p>
             ) : (
               <CatalogPicker presets={catalogAvailable} />
             )}
           </div>
         </details>
 
-        <details className="card" style={{ padding: 'var(--space-4)' }}>
-          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
-            הוספת ערוץ טלגרם
-          </summary>
-          <form
-            action={addTelegramChannelAction}
-            style={{ display: 'grid', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}
-          >
+        <details className="details-card">
+          <summary>הוספת ערוץ טלגרם</summary>
+          <form action={addTelegramChannelAction} style={{ display: 'grid', gap: 14, marginTop: 16 }}>
             <div className="field">
               <label>שם המשתמש בערוץ</label>
               <input
@@ -138,21 +123,19 @@ export default async function SettingsPage() {
               <input name="name" className="input" placeholder="עמית סגל" />
             </div>
             <div>
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-tel">
                 הוספת ערוץ
               </button>
             </div>
           </form>
         </details>
 
-        <details className="card" style={{ padding: 'var(--space-4)' }}>
-          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
-            הוספת מקור מותאם אישית
-          </summary>
+        <details className="details-card">
+          <summary>הוספת מקור מותאם אישית</summary>
           <form
             action={createSourceAction}
             className="grid-2"
-            style={{ marginTop: 'var(--space-3)' }}
+            style={{ marginTop: 16 }}
           >
             <div className="field">
               <label>שם</label>
@@ -178,7 +161,7 @@ export default async function SettingsPage() {
             </div>
             <input type="hidden" name="enabled" value="on" />
             <div className="full-span">
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-secondary">
                 הוספה
               </button>
             </div>
@@ -187,13 +170,12 @@ export default async function SettingsPage() {
       </section>
 
       {/* ─── Topics ─── */}
-      <section className="section">
+      <section className="settings-section">
         <h2>נושאים</h2>
-        <div className="hr" style={{ margin: 0 }} />
 
         {topics.map((t) => (
-          <div key={t.id} className="card" style={{ padding: 'var(--space-4)', gap: 'var(--space-3)' }}>
-            <form action={updateTopicAction} className="grid-1">
+          <div key={t.id} className="card-plain" style={{ display: 'grid', gap: 14 }}>
+            <form action={updateTopicAction} style={{ display: 'grid', gap: 14 }}>
               <input type="hidden" name="id" value={t.id} />
               <input type="hidden" name="enabled" value={t.enabled ? 'on' : ''} />
               <div className="field">
@@ -226,7 +208,7 @@ export default async function SettingsPage() {
               />
               <form action={deleteTopicAction}>
                 <input type="hidden" name="id" value={t.id} />
-                <button type="submit" className="btn btn-ghost">
+                <button type="submit" className="btn-danger-ghost">
                   מחיקה
                 </button>
               </form>
@@ -235,16 +217,17 @@ export default async function SettingsPage() {
         ))}
 
         {availableTopicPresets.length > 0 && (
-          <details className="card" style={{ padding: 'var(--space-4)' }}>
-            <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
-              הוספה מקטלוג נושאים
-            </summary>
-            <form action={addTopicPresetsAction} style={{ marginTop: 'var(--space-3)', display: 'grid', gap: 'var(--space-3)' }}>
+          <details className="details-card-violet">
+            <summary>הוספה מקטלוג נושאים</summary>
+            <form
+              action={addTopicPresetsAction}
+              style={{ marginTop: 16, display: 'grid', gap: 14 }}
+            >
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: 'var(--space-1) var(--space-4)',
+                  gap: '6px 20px',
                 }}
               >
                 {availableTopicPresets.map((p) => (
@@ -253,19 +236,20 @@ export default async function SettingsPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: 'var(--space-2)',
+                      gap: 8,
                       fontSize: 13,
+                      color: 'var(--ink-body-soft)',
                     }}
                   >
                     <input
                       type="checkbox"
                       name="preset_topic"
                       value={p.name}
-                      style={{ marginTop: 3 }}
+                      style={{ marginTop: 3, accentColor: 'var(--violet)' }}
                     />
                     <span>
-                      <strong>{p.name}</strong>{' '}
-                      <span className="text-muted">— {p.description.slice(0, 80)}…</span>
+                      <strong style={{ color: 'var(--ink)' }}>{p.name}</strong>{' '}
+                      <span style={{ color: 'var(--ink-muted)' }}>— {p.description.slice(0, 80)}…</span>
                     </span>
                   </label>
                 ))}
@@ -279,13 +263,11 @@ export default async function SettingsPage() {
           </details>
         )}
 
-        <details className="card" style={{ padding: 'var(--space-4)' }}>
-          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800 }}>
-            הוספת נושא חדש
-          </summary>
+        <details className="details-card">
+          <summary>הוספת נושא חדש</summary>
           <form
             action={createTopicAction}
-            style={{ display: 'grid', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}
+            style={{ display: 'grid', gap: 14, marginTop: 16 }}
           >
             <div className="field">
               <label>שם</label>
@@ -302,7 +284,7 @@ export default async function SettingsPage() {
             </div>
             <input type="hidden" name="enabled" value="on" />
             <div>
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-secondary">
                 הוספה
               </button>
             </div>
@@ -310,39 +292,14 @@ export default async function SettingsPage() {
         </details>
       </section>
 
-      {/* ─── Feed preferences ─── */}
-      <section className="section">
+      {/* ─── Feed preferences (only age remains — the rest lives in the Feed toolbar) ─── */}
+      <section className="settings-section">
         <h2>העדפות פיד</h2>
-        <div className="hr" style={{ margin: 0 }} />
 
-        <div className="field">
-          <label>הצגת כתבות</label>
-          <SegControl
-            name="only_matching_topics"
-            value={settings.only_matching_topics ? 'true' : 'false'}
-            options={[
-              { value: 'true', label: 'רק נושאים תואמים' },
-              { value: 'false', label: 'כל הכתבות' },
-            ]}
-            action={setFeedPreferenceAction}
-          />
-        </div>
-
-        <div className="field">
-          <label>מיון</label>
-          <SegControl
-            name="sort_mode"
-            value={settings.sort_mode}
-            options={[
-              { value: 'newest', label: 'החדש ביותר' },
-              { value: 'relevance', label: 'רלוונטיות' },
-            ]}
-            action={setFeedPreferenceAction}
-          />
-        </div>
-
-        <div className="field">
-          <label>גיל כתבה מרבי</label>
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--ink-placeholder)', marginBottom: 8 }}>
+            גיל כתבה מרבי (ברירת מחדל)
+          </div>
           <SegControl
             name="max_article_age_hours"
             value={String(settings.max_article_age_hours)}
@@ -354,6 +311,9 @@ export default async function SettingsPage() {
             action={setFeedPreferenceAction}
           />
         </div>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-muted)' }}>
+          חיפוש, מיון והצגת נושאים תואמים זמינים ישירות בסרגל שמעל הפיד.
+        </p>
       </section>
     </main>
   );

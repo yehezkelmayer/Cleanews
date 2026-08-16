@@ -8,17 +8,22 @@ export function TopNav() {
   const pathname = usePathname() ?? '/';
   const isFeed = pathname === '/' || pathname.startsWith('/article');
   const isSettings = pathname.startsWith('/settings');
+
   return (
     <nav className="nav">
       <div className="nav-links">
-        <Link href="/" aria-current={isFeed ? 'page' : undefined}>
+        <Link href="/" className="nav-link" aria-current={isFeed ? 'page' : undefined}>
           פיד
         </Link>
-        <Link href="/settings" aria-current={isSettings ? 'page' : undefined}>
+        <Link
+          href="/settings"
+          className="nav-link"
+          aria-current={isSettings ? 'page' : undefined}
+        >
           הגדרות
         </Link>
       </div>
-      <span className="nav-brand">
+      <span className="nav-brand" style={{ marginInlineStart: 'auto' }}>
         <LogoMark />
         <span>Cleanews</span>
       </span>

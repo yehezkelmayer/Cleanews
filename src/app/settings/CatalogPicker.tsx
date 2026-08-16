@@ -18,32 +18,34 @@ export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
   const items = presets.filter((p) => p.group === group);
 
   return (
-    <form action={addSourcePresetsAction} style={{ display: 'grid', gap: 'var(--space-3)' }}>
+    <form action={addSourcePresetsAction} style={{ display: 'grid', gap: 14 }}>
       <div className="field">
         <label>קטגוריה</label>
-        <select
-          className="input"
-          value={group}
-          onChange={(e) => setGroup(e.target.value as Group)}
-        >
-          {Object.entries(GROUP_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <div className="select-wrap">
+          <select
+            className="input"
+            value={group}
+            onChange={(e) => setGroup(e.target.value as Group)}
+          >
+            {Object.entries(GROUP_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {items.length === 0 ? (
-        <div className="text-muted" style={{ fontSize: 13 }}>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-muted)' }}>
           כל המקורות בקטגוריה זו כבר נוספו.
-        </div>
+        </p>
       ) : (
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 'var(--space-1) var(--space-4)',
+            gap: '6px 20px',
           }}
         >
           {items.map((preset) => (
@@ -52,19 +54,20 @@ export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 'var(--space-2)',
+                gap: 8,
                 fontSize: 13,
+                color: 'var(--ink-body-soft)',
               }}
             >
               <input
                 type="checkbox"
                 name="preset_rss"
                 value={preset.rss_url}
-                style={{ marginTop: 3 }}
+                style={{ marginTop: 3, accentColor: 'var(--violet)' }}
               />
               <span>
-                <strong>{preset.name}</strong>{' '}
-                <span className="text-muted">
+                <strong style={{ color: 'var(--ink)' }}>{preset.name}</strong>{' '}
+                <span style={{ color: 'var(--ink-muted)' }}>
                   — {new URL(preset.website_url).hostname}
                 </span>
               </span>
