@@ -112,6 +112,38 @@ export async function toggleTopicAction(formData: FormData) {
   revalidatePath('/settings');
 }
 
+export async function addTelegramChannelAction(formData: FormData) {
+  const raw = String(formData.get('handle') ?? '').trim();
+  if (!raw) return;
+
+  // Accept "@amitsegal", "amitsegal", "https://t.me/amitsegal", "t.me/amitsegal".
+  const handle = raw
+    .replace(/^https?:\/\/(?:t\.me|telegram\.me)\/(?:s\/)?/i, '')
+    .replace(/^@/, '')
+    .replace(/\/.*$/, '')
+    .trim();
+  if (!/^[A-Za-z0-9_]{3,64}$/.test(handle)) {
+    throw new Error('Invalid Telegram channel handle');
+  }
+
+  const displayName =
+    String(formData.get('name') ?? '').trim() || `Telegram · @${handle}`;
+
+  const rssUrl = `https://rsshub.app/telegram/channel/${handle}`;
+  const websiteUrl = `https://t.me/${handle}`;
+
+  const existing = await repo.listSources();
+  if (existing.some((s) => s.rss_url === rssUrl)) return;
+
+  await repo.createSource({
+    name: displayName,
+    website_url: websiteUrl,
+    rss_url: rssUrl,
+    enabled: true,
+  });
+  revalidatePath('/settings');
+}
+
 export async function addSourcePresetsAction(formData: FormData) {
   const selected = new Set(formData.getAll('preset_rss').map(String));
   if (selected.size === 0) return;

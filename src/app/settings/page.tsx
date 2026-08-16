@@ -3,6 +3,7 @@ import { SOURCE_PRESETS, SOURCE_GROUP_LABELS, TOPIC_PRESETS } from '@/lib/preset
 import { RunIngestionButton } from './RunIngestionButton';
 import {
   addSourcePresetsAction,
+  addTelegramChannelAction,
   addTopicPresetsAction,
   createSourceAction,
   createTopicAction,
@@ -189,6 +190,39 @@ export default async function SettingsPage() {
             </li>
           ))}
         </ul>
+
+        <details className="border border-app rounded p-3">
+          <summary className="cursor-pointer text-sm font-semibold">Add Telegram channel</summary>
+          <form action={addTelegramChannelAction} className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mt-3">
+            <label className="flex flex-col md:col-span-2">
+              Channel handle
+              <input
+                name="handle"
+                required
+                placeholder="@amitsegal  or  t.me/amitsegal"
+                className="border border-app rounded px-2 py-1 bg-transparent"
+              />
+            </label>
+            <label className="flex flex-col md:col-span-2">
+              Display name (optional)
+              <input
+                name="name"
+                placeholder="Amit Segal"
+                className="border border-app rounded px-2 py-1 bg-transparent"
+              />
+            </label>
+            <div className="md:col-span-2 flex items-center gap-3">
+              <button className="px-3 py-1 border border-app rounded hover:underline" type="submit">
+                Add channel
+              </button>
+              <span className="muted text-xs">
+                Uses rsshub.app to convert the public channel to RSS. Only works for public
+                Telegram channels. Common Israeli examples: @AbuAliExpress, @amitsegal,
+                @yinonmagal, @HaPargod.
+              </span>
+            </div>
+          </form>
+        </details>
 
         <details className="border border-app rounded p-3">
           <summary className="cursor-pointer text-sm font-semibold">Add Source</summary>
