@@ -129,7 +129,7 @@ export async function addTelegramChannelAction(formData: FormData) {
   const displayName =
     String(formData.get('name') ?? '').trim() || `Telegram · @${handle}`;
 
-  const rssUrl = `https://rsshub.app/telegram/channel/${handle}`;
+  const rssUrl = `https://t.me/s/${handle}`;
   const websiteUrl = `https://t.me/${handle}`;
 
   const existing = await repo.listSources();
