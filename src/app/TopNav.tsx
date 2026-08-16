@@ -10,16 +10,18 @@ export function TopNav() {
   const isSettings = pathname.startsWith('/settings');
   return (
     <nav className="nav">
+      <div className="nav-links">
+        <Link href="/" aria-current={isFeed ? 'page' : undefined}>
+          פיד
+        </Link>
+        <Link href="/settings" aria-current={isSettings ? 'page' : undefined}>
+          הגדרות
+        </Link>
+      </div>
       <span className="nav-brand">
         <LogoMark />
         <span>Cleanews</span>
       </span>
-      <Link href="/" aria-current={isFeed ? 'page' : undefined}>
-        פיד
-      </Link>
-      <Link href="/settings" aria-current={isSettings ? 'page' : undefined}>
-        הגדרות
-      </Link>
     </nav>
   );
 }
