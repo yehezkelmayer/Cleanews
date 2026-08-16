@@ -114,6 +114,12 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'israel-hebrew',
   },
   {
+    name: 'הפרגוד',
+    website_url: 'https://www.hapargod.co.il',
+    rss_url: 'https://www.hapargod.co.il/feed',
+    group: 'israel-hebrew',
+  },
+  {
     name: 'ערוץ 7',
     website_url: 'https://www.inn.co.il',
     rss_url: 'https://www.inn.co.il/Rss.aspx',
