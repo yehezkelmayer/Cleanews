@@ -384,3 +384,100 @@ textarea.input { resize: vertical; min-height: 68px; }
   max-width: 1200px; margin: 0 auto; padding: 32px 24px;
   font-size: 12px; color: var(--ink-placeholder); text-align: center;
 }
+
+/* ═══════════════ Bottom nav (mobile only) ═══════════════ */
+.bottom-nav { display: none; }
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed; bottom: 0; right: 0; left: 0; z-index: 40;
+    background: #ffffff;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px rgba(30, 27, 46, 0.06);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .bottom-tab {
+    flex: 1; min-height: 56px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; font-size: 11px; font-weight: 600;
+    color: var(--ink-placeholder); text-decoration: none;
+    background: none; border: none; cursor: pointer;
+    font-family: inherit;
+  }
+  .bottom-tab[data-active='true'] { color: var(--violet); }
+  .bottom-tab:active { background: rgba(124, 58, 237, 0.06); }
+}
+
+/* ═══════════════ Mobile layout (≤768px) ═══════════════ */
+@media (max-width: 768px) {
+  html, body { font-size: 15px; }
+
+  /* Top nav: hide the text links (bottom-nav takes over) */
+  .nav { padding: 14px 16px; gap: 12px; }
+  .nav-links { display: none; }
+  .nav-brand { margin-inline-start: 0; }
+
+  /* Page shells: tighter padding + bottom room for the tab bar */
+  .shell-feed { padding: 20px 16px 96px; }
+  .shell-reader { padding: 32px 16px 96px; }
+  .shell-settings { padding: 32px 16px 96px; gap: 36px; }
+  .footer-mini { padding: 24px 16px 96px; }
+
+  /* Feed toolbar: stack into a column, search full-width */
+  .toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 12px 14px;
+  }
+  .toolbar .search-wrap { min-width: 0; width: 100%; }
+  .toolbar .search-wrap input { min-height: 44px; }
+  /* The horizontally-scrollable pill row */
+  .toolbar .mobile-scroll {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .toolbar .mobile-scroll::-webkit-scrollbar { display: none; }
+  .toolbar .pill-group { flex-shrink: 0; }
+
+  /* Bigger touch targets for the pills */
+  .pill-btn { min-height: 44px; padding: 11px 18px; font-size: 13px; }
+
+  /* Feed: collapse to one column + Telegram becomes a top strip */
+  .feed-layout { grid-template-columns: 1fr; gap: 20px; }
+  .tg-rail {
+    position: static !important;
+    padding: 16px;
+    order: -1;   /* Above the main list */
+  }
+  .tg-list {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 240px);
+    grid-template-columns: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .tg-list::-webkit-scrollbar { display: none; }
+
+  /* Featured card + cards */
+  .feed-featured { padding: 24px; margin-bottom: 20px; }
+  .feed-featured h1 { font-size: 26px; }
+  .feed-featured .featured-excerpt { font-size: 16px; }
+  .feed-grid { grid-template-columns: 1fr; gap: 12px; }
+  .feed-card { padding: 18px; }
+  .feed-card h3 { font-size: 17px; }
+
+  /* Article reader */
+  .reader h1 { font-size: 28px; }
+  .reader-body { font-size: 17px; line-height: 1.8; }
+
+  /* Settings: two-col field grids collapse to one column */
+  .grid-2 { grid-template-columns: 1fr; }
+}

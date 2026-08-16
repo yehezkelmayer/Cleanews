@@ -57,25 +57,27 @@ export function FeedToolbar({
 
   return (
     <div className="toolbar" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-      {/* Row 1: search + primary filters */}
+      {/* Row 1: search full-width */}
+      <div className="search-wrap" style={{ flex: 'unset', width: '100%' }}>
+        <SearchIcon />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="חיפוש כתבות..."
+          disabled={pending}
+        />
+      </div>
+
+      {/* Row 2: pill-groups — flex-wrap on desktop, horizontal scroll on mobile */}
       <div
+        className="mobile-scroll"
         style={{
           display: 'flex',
-          alignItems: 'center',
           gap: 12,
           flexWrap: 'wrap',
+          alignItems: 'center',
         }}
       >
-        <div className="search-wrap">
-          <SearchIcon />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="חיפוש כתבות..."
-            disabled={pending}
-          />
-        </div>
-
         <div className="pill-group" role="group" aria-label="מיון">
           <button
             type="button"
@@ -149,7 +151,7 @@ export function FeedToolbar({
         </div>
       </div>
 
-      {/* Row 2: dropdown filters (source, topic) */}
+      {/* Row 3: dropdown filters (source, topic) */}
       <div
         style={{
           display: 'flex',
