@@ -21,15 +21,6 @@ function isLive(iso: string | null): boolean {
   return Date.now() - t < 60 * 60 * 1000;
 }
 
-function matchesSearch(item: FeedItem, q: string): boolean {
-  if (!q) return true;
-  const needle = q.toLowerCase();
-  return (
-    item.title.toLowerCase().includes(needle) ||
-    (item.description?.toLowerCase().includes(needle) ?? false)
-  );
-}
-
 export default async function FeedPage({
   searchParams,
 }: {
@@ -54,11 +45,11 @@ export default async function FeedPage({
     onlyMatchingTopics,
     sortMode,
     maxAgeHours,
+    search: q,
   });
 
-  const filtered = q ? items.filter((i) => matchesSearch(i, q)) : items;
-  const websiteAll = filtered.filter((i) => !isTelegramSource(i.url));
-  const telegramItems = filtered.filter((i) => isTelegramSource(i.url));
+  const websiteAll = items.filter((i) => !isTelegramSource(i.url));
+  const telegramItems = items.filter((i) => isTelegramSource(i.url));
 
   const featured = websiteAll[0] ?? null;
   const restWebsite = featured ? websiteAll.slice(1) : websiteAll;
@@ -72,7 +63,7 @@ export default async function FeedPage({
         maxAgeHours={maxAgeHours}
       />
 
-      {filtered.length === 0 ? (
+      {items.length === 0 ? (
         <div className="card-plain" style={{ padding: 40, textAlign: 'center' }}>
           <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
             אין כתבות להצגה כרגע. הוסיפו מקורות ונושאים ב

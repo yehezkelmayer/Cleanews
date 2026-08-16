@@ -18,7 +18,6 @@ import {
 } from './actions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
 
 const ENABLE_OPTS = [
   { value: 'true', label: 'מופעל' },

@@ -22,6 +22,11 @@ export function FeedToolbar({
   const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState(initialSearch);
 
+  // URL navigation (including Back/Forward) is authoritative.
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
+
   // Debounced search: push to URL 300ms after typing stops.
   useEffect(() => {
     const handle = setTimeout(() => {

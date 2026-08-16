@@ -127,11 +127,13 @@ export const repo = {
     maxAgeHours: number;
     sourceId?: number | null;
     topicId?: number | null;
+    search?: string | null;
     limit?: number;
   }): Promise<FeedItem[]> {
     const limit = opts.limit ?? 200;
     const sourceId = opts.sourceId ?? null;
     const topicId = opts.topicId ?? null;
+    const search = opts.search?.trim() ?? '';
     const rows = await sql<FeedItem[]>`
       WITH filtered AS (
         SELECT a.*, s.name AS source_name
@@ -145,6 +147,11 @@ export const repo = {
             SELECT 1 FROM article_topics at2
             WHERE at2.article_id = a.id AND at2.topic_id = ${topicId}
           ))
+          AND (
+            ${search}::text = ''
+            OR POSITION(LOWER(${search}) IN LOWER(a.title)) > 0
+            OR POSITION(LOWER(${search}) IN LOWER(COALESCE(a.description, ''))) > 0
+          )
       ),
       agg AS (
         SELECT f.*,

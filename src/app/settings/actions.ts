@@ -4,32 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { repo } from '@/lib/repo';
 import { sourceInput, topicInput, settingsInput } from '@/lib/validation';
 import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
-import { runIngestion, type IngestSummary } from '@/lib/ingest';
-
-export type IngestActionState = {
-  status: 'idle' | 'ok' | 'error';
-  summary?: IngestSummary;
-  message?: string;
-  ranAt?: string;
-};
-
-export async function runIngestionNowAction(
-  _prev: IngestActionState,
-  _formData: FormData,
-): Promise<IngestActionState> {
-  try {
-    const summary = await runIngestion();
-    revalidatePath('/');
-    revalidatePath('/settings');
-    return { status: 'ok', summary, ranAt: new Date().toISOString() };
-  } catch (err) {
-    return {
-      status: 'error',
-      message: (err as Error).message,
-      ranAt: new Date().toISOString(),
-    };
-  }
-}
 
 function parseInt10(v: FormDataEntryValue | null): number {
   const n = parseInt(String(v ?? ''), 10);
