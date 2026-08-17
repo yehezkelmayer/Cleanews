@@ -1,25 +1,32 @@
 /**
  * Curated preset catalogs of news sources and topics.
+ * Last verified: 17-08-2026 (based on the owner's manual audit).
  *
- * These are shown in Settings as one-click "add" checkboxes so the user
- * doesn't have to hunt for RSS URLs.
- *
- * RSS URLs on Israeli publisher sites tend to change over time. If one
- * stops fetching, disable it in Settings; the ingestion pipeline keeps
- * running for the rest.
+ * If an RSS URL stops fetching, disable it in Settings; the ingestion
+ * pipeline auto-disables globally after 10 consecutive failures.
  */
 
 export type SourcePreset = {
   name: string;
   website_url: string;
   rss_url: string;
-  group: 'israel-hebrew' | 'israel-english' | 'world-news' | 'tech';
+  group: 'israel-hebrew' | 'israel-english' | 'world-news' | 'tech' | 'telegram';
 };
 
 export type TopicPreset = {
   name: string;
   description: string;
 };
+
+/** Build a Telegram preset — the ingest pipeline recognises
+ *  https://t.me/s/<handle> as a Telegram source and scrapes the
+ *  public web preview instead of parsing RSS. */
+const tg = (name: string, handle: string): SourcePreset => ({
+  name,
+  website_url: `https://t.me/${handle}`,
+  rss_url: `https://t.me/s/${handle}`,
+  group: 'telegram',
+});
 
 export const SOURCE_PRESETS: SourcePreset[] = [
   // ─────────────── Israel · Hebrew ───────────────
@@ -30,39 +37,9 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'israel-hebrew',
   },
   {
-    name: 'Ynet — חדשות',
-    website_url: 'https://www.ynet.co.il/news',
-    rss_url: 'https://www.ynet.co.il/Integration/StoryRss1854.xml',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'ישראל היום',
-    website_url: 'https://www.israelhayom.co.il',
-    rss_url: 'https://www.israelhayom.co.il/rss.xml',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'מעריב',
-    website_url: 'https://www.maariv.co.il',
-    rss_url: 'https://www.maariv.co.il/Rss/RssChadashot',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'מאקו (N12)',
-    website_url: 'https://www.mako.co.il',
-    rss_url: 'https://rcs.mako.co.il/rss/news-israel.xml',
-    group: 'israel-hebrew',
-  },
-  {
     name: 'וואלה חדשות',
     website_url: 'https://news.walla.co.il',
-    rss_url: 'https://rss.walla.co.il/feed/1',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'הארץ',
-    website_url: 'https://www.haaretz.co.il',
-    rss_url: 'https://www.haaretz.co.il/cmlink/1.1470869',
+    rss_url: 'https://rss.walla.co.il/feed/1?type=main',
     group: 'israel-hebrew',
   },
   {
@@ -72,33 +49,9 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'israel-hebrew',
   },
   {
-    name: 'כלכליסט',
-    website_url: 'https://www.calcalist.co.il',
-    rss_url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'ספורט 5',
-    website_url: 'https://www.sport5.co.il',
-    rss_url: 'https://www.sport5.co.il/rss.aspx?FolderID=64',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'ONE — ספורט',
-    website_url: 'https://www.one.co.il',
-    rss_url: 'https://www.one.co.il/cat/rss/rss.aspx',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'כיכר השבת',
-    website_url: 'https://www.kikar.co.il',
-    rss_url: 'https://www.kikar.co.il/feed',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'בחדרי חרדים',
-    website_url: 'https://www.bhol.co.il',
-    rss_url: 'https://www.bhol.co.il/rss/newsflash.xml',
+    name: 'ישראל היום',
+    website_url: 'https://www.israelhayom.co.il',
+    rss_url: 'https://www.israelhayom.co.il/rss',
     group: 'israel-hebrew',
   },
   {
@@ -108,65 +61,23 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'israel-hebrew',
   },
   {
-    name: 'הפרגוד',
-    website_url: 'https://www.haparegod.co.il',
-    rss_url: 'https://www.haparegod.co.il/feed',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'ערוץ 7',
-    website_url: 'https://www.inn.co.il',
-    rss_url: 'https://www.inn.co.il/Rss.aspx',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'כאן חדשות',
-    website_url: 'https://www.kan.org.il',
-    rss_url: 'https://www.kan.org.il/podcast/podcast.ashx/rss?podcastId=1090',
-    group: 'israel-hebrew',
-  },
-  {
-    name: 'The Marker — הייטק',
-    website_url: 'https://www.themarker.com/technation',
-    rss_url: 'https://www.themarker.com/cmlink/1.148',
+    name: 'כיפה',
+    website_url: 'https://www.kipa.co.il',
+    rss_url: 'https://www.kipa.co.il/feed/',
     group: 'israel-hebrew',
   },
 
   // ─────────────── Israel · English ───────────────
   {
-    name: 'Times of Israel',
+    name: 'The Times of Israel',
     website_url: 'https://www.timesofisrael.com',
-    rss_url: 'https://www.timesofisrael.com/feed',
+    rss_url: 'https://www.timesofisrael.com/feed/',
     group: 'israel-english',
   },
   {
-    name: 'Haaretz (English)',
-    website_url: 'https://www.haaretz.com',
-    rss_url: 'https://www.haaretz.com/cmlink/1.628752',
-    group: 'israel-english',
-  },
-  {
-    name: 'Jerusalem Post',
+    name: 'The Jerusalem Post',
     website_url: 'https://www.jpost.com',
     rss_url: 'https://www.jpost.com/rss/rssfeedsfrontpage.aspx',
-    group: 'israel-english',
-  },
-  {
-    name: 'Israel Hayom (English)',
-    website_url: 'https://www.israelhayom.com',
-    rss_url: 'https://www.israelhayom.com/feed',
-    group: 'israel-english',
-  },
-  {
-    name: 'Globes (English)',
-    website_url: 'https://en.globes.co.il',
-    rss_url: 'https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=1725',
-    group: 'israel-english',
-  },
-  {
-    name: 'Ynetnews',
-    website_url: 'https://www.ynetnews.com',
-    rss_url: 'https://www.ynetnews.com/Integration/StoryRss3082.xml',
     group: 'israel-english',
   },
 
@@ -178,39 +89,39 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'world-news',
   },
   {
-    name: 'BBC World',
-    website_url: 'https://www.bbc.com/news/world',
-    rss_url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
-    group: 'world-news',
-  },
-  {
-    name: 'The New York Times — Home',
-    website_url: 'https://www.nytimes.com',
-    rss_url: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-    group: 'world-news',
-  },
-  {
-    name: 'The New York Times — World',
-    website_url: 'https://www.nytimes.com/section/world',
-    rss_url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
-    group: 'world-news',
-  },
-  {
     name: 'The Guardian — World',
     website_url: 'https://www.theguardian.com/world',
     rss_url: 'https://www.theguardian.com/world/rss',
     group: 'world-news',
   },
   {
-    name: 'Al Jazeera',
-    website_url: 'https://www.aljazeera.com',
-    rss_url: 'https://www.aljazeera.com/xml/rss/all.xml',
+    name: 'Sky News',
+    website_url: 'https://news.sky.com',
+    rss_url: 'https://feeds.skynews.com/feeds/rss/home.xml',
     group: 'world-news',
   },
   {
-    name: 'Associated Press — Top News',
-    website_url: 'https://apnews.com',
-    rss_url: 'https://feeds.apnews.com/rss/apf-topnews',
+    name: 'The Independent — World',
+    website_url: 'https://www.independent.co.uk/news/world',
+    rss_url: 'https://www.independent.co.uk/news/world/rss',
+    group: 'world-news',
+  },
+  {
+    name: 'Deutsche Welle',
+    website_url: 'https://www.dw.com/en',
+    rss_url: 'https://rss.dw.com/rdf/rss-en-all',
+    group: 'world-news',
+  },
+  {
+    name: 'Euronews',
+    website_url: 'https://www.euronews.com',
+    rss_url: 'https://www.euronews.com/rss?level=theme&name=news',
+    group: 'world-news',
+  },
+  {
+    name: 'Le Monde',
+    website_url: 'https://www.lemonde.fr',
+    rss_url: 'https://www.lemonde.fr/rss/une.xml',
     group: 'world-news',
   },
   {
@@ -220,31 +131,31 @@ export const SOURCE_PRESETS: SourcePreset[] = [
     group: 'world-news',
   },
   {
-    name: 'The Washington Post — World',
-    website_url: 'https://www.washingtonpost.com/world',
-    rss_url: 'https://feeds.washingtonpost.com/rss/world',
+    name: 'CBS News',
+    website_url: 'https://www.cbsnews.com',
+    rss_url: 'https://www.cbsnews.com/latest/rss/main',
     group: 'world-news',
   },
   {
-    name: 'CNN — Top Stories',
-    website_url: 'https://edition.cnn.com',
-    rss_url: 'http://rss.cnn.com/rss/edition.rss',
+    name: 'NBC News',
+    website_url: 'https://www.nbcnews.com',
+    rss_url: 'https://feeds.nbcnews.com/nbcnews/public/news',
     group: 'world-news',
   },
   {
-    name: 'Deutsche Welle — Top',
-    website_url: 'https://www.dw.com/en',
-    rss_url: 'https://rss.dw.com/rdf/rss-en-all',
+    name: 'Fox News — Latest',
+    website_url: 'https://www.foxnews.com',
+    rss_url: 'https://moxie.foxnews.com/google-publisher/latest.xml',
+    group: 'world-news',
+  },
+  {
+    name: 'Al Jazeera',
+    website_url: 'https://www.aljazeera.com',
+    rss_url: 'https://www.aljazeera.com/xml/rss/all.xml',
     group: 'world-news',
   },
 
   // ─────────────── Tech ───────────────
-  {
-    name: 'The Verge',
-    website_url: 'https://www.theverge.com',
-    rss_url: 'https://www.theverge.com/rss/index.xml',
-    group: 'tech',
-  },
   {
     name: 'Ars Technica',
     website_url: 'https://arstechnica.com',
@@ -254,39 +165,45 @@ export const SOURCE_PRESETS: SourcePreset[] = [
   {
     name: 'TechCrunch',
     website_url: 'https://techcrunch.com',
-    rss_url: 'https://techcrunch.com/feed',
+    rss_url: 'https://techcrunch.com/feed/',
     group: 'tech',
   },
   {
-    name: 'Wired',
+    name: 'WIRED',
     website_url: 'https://www.wired.com',
     rss_url: 'https://www.wired.com/feed/rss',
     group: 'tech',
   },
-  {
-    name: 'MIT Technology Review',
-    website_url: 'https://www.technologyreview.com',
-    rss_url: 'https://www.technologyreview.com/feed',
-    group: 'tech',
-  },
-  {
-    name: 'Hacker News — Front page',
-    website_url: 'https://news.ycombinator.com',
-    rss_url: 'https://hnrss.org/frontpage',
-    group: 'tech',
-  },
-  {
-    name: 'Krebs on Security',
-    website_url: 'https://krebsonsecurity.com',
-    rss_url: 'https://krebsonsecurity.com/feed',
-    group: 'tech',
-  },
-  {
-    name: 'The Hacker News',
-    website_url: 'https://thehackernews.com',
-    rss_url: 'https://feeds.feedburner.com/TheHackersNews',
-    group: 'tech',
-  },
+
+  // ─────────────── Telegram ───────────────
+  // 25 channels from the 17-08-2026 audit. Only public Telegram
+  // channels work; if a channel goes private the scraper returns
+  // nothing and it can be disabled in Settings.
+  tg('דניאל עמרם', 'danielamram3'),
+  tg('חדשות 100שטח', 'yediotnews25'),
+  tg('אבו עלי אקספרס', 'abualiexpress'),
+  tg('עמית סגל', 'amitsegal'),
+  tg('רם דיווחים', 'ramreports'),
+  tg('301 העולם הערבי', 'arabworld301news'),
+  tg('ינון ניוז', 'yinonews'),
+  tg('דיווחים ראשוניים', 'firstreportsnews'),
+  tg('ישראל היום · טלגרם', 'israelhayomofficial'),
+  tg("N12 — צ'אט הכתבים", 'N12chat'),
+  tg('Israel Today', 'ILtoday'),
+  tg('כלכליסט · טלגרם', 'calcalist'),
+  tg('המוקד', 'hamoked_il'),
+  tg('אריאל כהנא', 'Ariel_Kahana'),
+  tg('גלובס · טלגרם', 'globesnews'),
+  tg('חדשות 360', 'newsil360'),
+  tg('הזירה הפוליטית', 'Political_arena'),
+  tg('חדשות 8200', 'New_security8200'),
+  tg('צאפ מגזין', 'tzap1'),
+  tg('זירת המלחמה', 'ziratwar'),
+  tg('חדשות N12', 'N12_News'),
+  tg('מיכאל שמש', 'MichaelShemesh'),
+  tg('סולימאן ובלומנטל — כאן חדשות', 'SuliandItay'),
+  tg('חשופים', 'haskupim'),
+  tg('עכשיו 14', 'Now14_Israel'),
 ];
 
 export const SOURCE_GROUP_LABELS: Record<SourcePreset['group'], string> = {
@@ -294,6 +211,7 @@ export const SOURCE_GROUP_LABELS: Record<SourcePreset['group'], string> = {
   'israel-english': 'Israel · English',
   'world-news': 'World news',
   tech: 'Tech',
+  telegram: 'טלגרם',
 };
 
 /**

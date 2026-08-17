@@ -11,6 +11,7 @@ const GROUP_LABELS: Record<Group, string> = {
   'israel-english': 'Israel · English',
   'world-news': 'World news',
   tech: 'Tech',
+  telegram: 'טלגרם',
 };
 
 export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
