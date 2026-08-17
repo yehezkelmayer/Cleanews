@@ -19,7 +19,11 @@ export async function runIngestionNowAction(
   _formData: FormData,
 ): Promise<IngestActionState> {
   try {
-    const summary = await runIngestion();
+    const sessionId = await getSessionId();
+    // Scope this manual pull to the user's own subscriptions so the
+    // summary/errors only reflect their sources — global sources they
+    // never chose stay in the cron's lane.
+    const summary = await runIngestion({ sessionId });
     revalidatePath('/');
     revalidatePath('/settings');
     return { status: 'ok', summary, ranAt: new Date().toISOString() };

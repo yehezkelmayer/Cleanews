@@ -53,6 +53,22 @@ export const repo = {
       LIMIT ${limit}`;
   },
 
+  /**
+   * Enabled feed_sources subscribed to by this specific session — used
+   * by the "Fetch news now" button so it only touches (and reports
+   * errors for) the sources the current user actually cares about.
+   */
+  async feedSourcesForSession(sessionId: string): Promise<FeedSource[]> {
+    return await sql<FeedSource[]>`
+      SELECT fs.*
+      FROM feed_sources fs
+      JOIN user_sources us ON us.feed_source_id = fs.id
+      WHERE us.session_id = ${sessionId}
+        AND us.enabled = TRUE
+        AND fs.enabled_globally = TRUE
+      ORDER BY fs.last_fetched_at NULLS FIRST`;
+  },
+
   async feedSourceMarkFetched(id: number, ok: boolean, error?: string) {
     if (ok) {
       await sql`

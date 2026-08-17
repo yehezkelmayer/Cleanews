@@ -1,3 +1,4 @@
+import type { FeedSource } from './types';
 import { repo } from './repo';
 import { fetchFeed } from './rss';
 import { extractArticle } from './extract';
@@ -13,15 +14,27 @@ export type IngestSummary = {
 };
 
 /**
- * Phase 1 ingestion: iterate the GLOBAL feed_sources table, oldest-fetched
- * first, and store new articles once. No per-user topic matching happens
- * here — matching is computed at query time per user, from user_topics.
+ * Ingestion:
+ * - Global mode (no opts.sessionId): iterate the whole feed_sources
+ *   table, oldest-fetched first. Used by the cron so every source is
+ *   fetched once regardless of how many users subscribe.
+ * - Per-user mode (opts.sessionId): iterate only the sources this
+ *   session is subscribed to. Used by the "Fetch news now" button so
+ *   the user sees updates for their own feeds and only errors from
+ *   their sources — noise from broken global sources they never chose
+ *   never reaches them.
  *
  * A single source failing is recorded on the source row (last_error,
- * fetch_failure_count) and doesn't stop the rest of the batch.
+ * fetch_failure_count) and doesn't stop the rest of the batch. After
+ * 10 consecutive failures a source auto-disables globally.
  */
-export async function runIngestion(opts?: { limit?: number }): Promise<IngestSummary> {
-  const sources = await repo.feedSourcesDueForFetch(opts?.limit ?? 100);
+export async function runIngestion(opts?: {
+  limit?: number;
+  sessionId?: string;
+}): Promise<IngestSummary> {
+  const sources: FeedSource[] = opts?.sessionId
+    ? await repo.feedSourcesForSession(opts.sessionId)
+    : await repo.feedSourcesDueForFetch(opts?.limit ?? 100);
 
   const summary: IngestSummary = {
     sourcesChecked: sources.length,
