@@ -5,6 +5,7 @@ import { repo } from '@/lib/repo';
 import { sourceInput, topicInput, settingsInput } from '@/lib/validation';
 import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
 import { runIngestion, type IngestSummary } from '@/lib/ingest';
+import { getSessionId } from '@/lib/session';
 
 export type IngestActionState = {
   status: 'idle' | 'ok' | 'error';
@@ -37,102 +38,63 @@ function parseInt10(v: FormDataEntryValue | null): number {
   return n;
 }
 
+// ─────────────────────── Sources (per-user via feed_sources) ───────────────────────
+
 export async function createSourceAction(formData: FormData) {
+  const sessionId = await getSessionId();
   const parsed = sourceInput.parse({
     name: formData.get('name'),
     website_url: formData.get('website_url'),
     rss_url: formData.get('rss_url'),
     enabled: formData.get('enabled') === 'on',
   });
-  await repo.createSource(parsed);
-  revalidatePath('/settings');
-}
-
-export async function updateSourceAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  const parsed = sourceInput.parse({
-    name: formData.get('name'),
-    website_url: formData.get('website_url'),
-    rss_url: formData.get('rss_url'),
-    enabled: formData.get('enabled') === 'on',
+  const fs = await repo.feedSourceUpsert({
+    rss_url: parsed.rss_url,
+    website_url: parsed.website_url,
+    canonical_name: parsed.name,
   });
-  await repo.updateSource(id, parsed);
-
-  const topicIdsRaw = formData.getAll('topic_ids').map((v) => parseInt(String(v), 10));
-  const topicIds = topicIdsRaw.filter((n) => Number.isFinite(n));
-  await repo.setSourceTopics(id, topicIds);
-
+  await repo.userSourceAdd(sessionId, fs.id, { enabled: parsed.enabled });
   revalidatePath('/settings');
 }
 
 export async function deleteSourceAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  await repo.deleteSource(id);
+  const sessionId = await getSessionId();
+  const feedSourceId = parseInt10(formData.get('id'));
+  await repo.userSourceRemove(sessionId, feedSourceId);
   revalidatePath('/settings');
-}
-
-export async function toggleSourceAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  const enabled = formData.get('enabled') === 'true';
-  await repo.updateSource(id, { enabled: !enabled });
-  revalidatePath('/settings');
+  revalidatePath('/');
 }
 
 export async function setSourceEnabledAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
+  const sessionId = await getSessionId();
+  const feedSourceId = parseInt10(formData.get('id'));
   const enabled = String(formData.get('enabled')) === 'true';
-  await repo.updateSource(id, { enabled });
+  await repo.userSourceSetEnabled(sessionId, feedSourceId, enabled);
   revalidatePath('/settings');
   revalidatePath('/');
 }
 
-export async function createTopicAction(formData: FormData) {
-  const parsed = topicInput.parse({
-    name: formData.get('name'),
-    description: formData.get('description') ?? '',
-    enabled: formData.get('enabled') === 'on',
-  });
-  await repo.createTopic(parsed);
+export async function addSourcePresetsAction(formData: FormData) {
+  const sessionId = await getSessionId();
+  const selected = new Set(formData.getAll('preset_rss').map(String));
+  if (selected.size === 0) return;
+  for (const preset of SOURCE_PRESETS) {
+    if (!selected.has(preset.rss_url)) continue;
+    const fs = await repo.feedSourceUpsert({
+      rss_url: preset.rss_url,
+      website_url: preset.website_url,
+      canonical_name: preset.name,
+    });
+    await repo.userSourceAdd(sessionId, fs.id, { enabled: true });
+  }
   revalidatePath('/settings');
-}
-
-export async function updateTopicAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  const parsed = topicInput.parse({
-    name: formData.get('name'),
-    description: formData.get('description') ?? '',
-    enabled: formData.get('enabled') === 'on',
-  });
-  await repo.updateTopic(id, parsed);
-  revalidatePath('/settings');
-}
-
-export async function deleteTopicAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  await repo.deleteTopic(id);
-  revalidatePath('/settings');
-}
-
-export async function toggleTopicAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  const enabled = formData.get('enabled') === 'true';
-  await repo.updateTopic(id, { enabled: !enabled });
-  revalidatePath('/settings');
-}
-
-export async function setTopicEnabledAction(formData: FormData) {
-  const id = parseInt10(formData.get('id'));
-  const enabled = String(formData.get('enabled')) === 'true';
-  await repo.updateTopic(id, { enabled });
-  revalidatePath('/settings');
-  revalidatePath('/');
 }
 
 export async function addTelegramChannelAction(formData: FormData) {
+  const sessionId = await getSessionId();
   const raw = String(formData.get('handle') ?? '').trim();
   if (!raw) return;
 
-  // Accept "@amitsegal", "amitsegal", "https://t.me/amitsegal", "t.me/amitsegal".
   const handle = raw
     .replace(/^https?:\/\/(?:t\.me|telegram\.me)\/(?:s\/)?/i, '')
     .replace(/^@/, '')
@@ -142,60 +104,80 @@ export async function addTelegramChannelAction(formData: FormData) {
     throw new Error('Invalid Telegram channel handle');
   }
 
-  const displayName =
-    String(formData.get('name') ?? '').trim() || `Telegram · @${handle}`;
-
-  const rssUrl = `https://t.me/s/${handle}`;
-  const websiteUrl = `https://t.me/${handle}`;
-
-  const existing = await repo.listSources();
-  if (existing.some((s) => s.rss_url === rssUrl)) return;
-
-  await repo.createSource({
-    name: displayName,
-    website_url: websiteUrl,
-    rss_url: rssUrl,
-    enabled: true,
+  const displayName = String(formData.get('name') ?? '').trim() || `Telegram · @${handle}`;
+  const fs = await repo.feedSourceUpsert({
+    rss_url: `https://t.me/s/${handle}`,
+    website_url: `https://t.me/${handle}`,
+    canonical_name: displayName,
   });
+  await repo.userSourceAdd(sessionId, fs.id, { enabled: true, displayName });
   revalidatePath('/settings');
 }
 
-export async function addSourcePresetsAction(formData: FormData) {
-  const selected = new Set(formData.getAll('preset_rss').map(String));
-  if (selected.size === 0) return;
-  const existing = await repo.listSources();
-  const existingUrls = new Set(existing.map((s) => s.rss_url));
-  for (const preset of SOURCE_PRESETS) {
-    if (!selected.has(preset.rss_url)) continue;
-    if (existingUrls.has(preset.rss_url)) continue;
-    await repo.createSource({
-      name: preset.name,
-      website_url: preset.website_url,
-      rss_url: preset.rss_url,
-      enabled: true,
-    });
-  }
+// ─────────────────────── Topics (per-user) ───────────────────────
+
+export async function createTopicAction(formData: FormData) {
+  const sessionId = await getSessionId();
+  const parsed = topicInput.parse({
+    name: formData.get('name'),
+    description: formData.get('description') ?? '',
+    enabled: formData.get('enabled') === 'on',
+  });
+  await repo.userTopicCreate(sessionId, parsed);
   revalidatePath('/settings');
+  revalidatePath('/');
+}
+
+export async function updateTopicAction(formData: FormData) {
+  const sessionId = await getSessionId();
+  const id = parseInt10(formData.get('id'));
+  const parsed = topicInput.parse({
+    name: formData.get('name'),
+    description: formData.get('description') ?? '',
+    enabled: formData.get('enabled') === 'on',
+  });
+  await repo.userTopicUpdate(sessionId, id, parsed);
+  revalidatePath('/settings');
+  revalidatePath('/');
+}
+
+export async function deleteTopicAction(formData: FormData) {
+  const sessionId = await getSessionId();
+  const id = parseInt10(formData.get('id'));
+  await repo.userTopicDelete(sessionId, id);
+  revalidatePath('/settings');
+  revalidatePath('/');
+}
+
+export async function setTopicEnabledAction(formData: FormData) {
+  const sessionId = await getSessionId();
+  const id = parseInt10(formData.get('id'));
+  const enabled = String(formData.get('enabled')) === 'true';
+  await repo.userTopicSetEnabled(sessionId, id, enabled);
+  revalidatePath('/settings');
+  revalidatePath('/');
 }
 
 export async function addTopicPresetsAction(formData: FormData) {
+  const sessionId = await getSessionId();
   const selected = new Set(formData.getAll('preset_topic').map(String));
   if (selected.size === 0) return;
-  const existing = await repo.listTopics();
-  const existingNames = new Set(existing.map((t) => t.name.toLowerCase()));
   for (const preset of TOPIC_PRESETS) {
     if (!selected.has(preset.name)) continue;
-    if (existingNames.has(preset.name.toLowerCase())) continue;
-    await repo.createTopic({
+    await repo.userTopicCreate(sessionId, {
       name: preset.name,
       description: preset.description,
       enabled: true,
     });
   }
   revalidatePath('/settings');
+  revalidatePath('/');
 }
 
+// ─────────────────────── Feed preferences (per-user) ───────────────────────
+
 export async function setFeedPreferenceAction(formData: FormData) {
+  const sessionId = await getSessionId();
   const patch: {
     only_matching_topics?: boolean;
     sort_mode?: 'newest' | 'relevance';
@@ -213,18 +195,27 @@ export async function setFeedPreferenceAction(formData: FormData) {
     if (Number.isFinite(n) && n > 0) patch.max_article_age_hours = n;
   }
   if (Object.keys(patch).length === 0) return;
-  await repo.updateSettings(patch);
+  await repo.userSettingsUpdate(sessionId, patch);
   revalidatePath('/');
   revalidatePath('/settings');
 }
 
 export async function updateSettingsAction(formData: FormData) {
+  const sessionId = await getSessionId();
   const parsed = settingsInput.parse({
     only_matching_topics: formData.get('only_matching_topics') === 'on',
     sort_mode: (formData.get('sort_mode') ?? 'newest') as 'newest' | 'relevance',
     max_article_age_hours: parseInt10(formData.get('max_article_age_hours')),
   });
-  await repo.updateSettings(parsed);
+  await repo.userSettingsUpdate(sessionId, parsed);
   revalidatePath('/');
   revalidatePath('/settings');
+}
+
+// Legacy compat exports (unused by new UI, kept until refactor sweeps pages)
+export async function toggleSourceAction(formData: FormData) {
+  return setSourceEnabledAction(formData);
+}
+export async function toggleTopicAction(formData: FormData) {
+  return setTopicEnabledAction(formData);
 }

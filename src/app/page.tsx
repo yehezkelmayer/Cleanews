@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { repo } from '@/lib/repo';
+import { getSessionId } from '@/lib/session';
 import { relativeTime, truncate } from '@/lib/format';
 import { GlobeIcon, TelegramIcon, isTelegramSource } from './icons';
 import { FeedToolbar } from './FeedToolbar';
@@ -50,10 +51,11 @@ export default async function FeedPage({
   const sourceId = parseIntParam(sp.source);
   const topicId = parseIntParam(sp.topic);
 
+  const sessionId = await getSessionId();
   const [settings, sources, topics] = await Promise.all([
-    repo.getSettings(),
-    repo.enabledSources(),
-    repo.enabledTopics(),
+    repo.userSettings(sessionId),
+    repo.userSources(sessionId),
+    repo.userTopics(sessionId, { onlyEnabled: true }),
   ]);
 
   const sortMode: 'newest' | 'relevance' =
@@ -64,7 +66,7 @@ export default async function FeedPage({
     ? parseInt(ageParam, 10) || settings.max_article_age_hours
     : settings.max_article_age_hours;
 
-  const items = await repo.feed({
+  const items = await repo.feed(sessionId, {
     onlyMatchingTopics,
     sortMode,
     maxAgeHours,
@@ -86,7 +88,9 @@ export default async function FeedPage({
         sortMode={sortMode}
         onlyMatchingTopics={onlyMatchingTopics}
         maxAgeHours={maxAgeHours}
-        sources={sources.map((s) => ({ id: s.id, name: s.name }))}
+        sources={sources
+          .filter((s) => s.enabled)
+          .map((s) => ({ id: s.feed_source_id, name: s.display_name ?? s.canonical_name }))}
         topics={topics.map((t) => ({ id: t.id, name: t.name }))}
         sourceId={sourceId}
         topicId={topicId}

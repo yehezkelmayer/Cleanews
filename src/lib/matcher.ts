@@ -1,7 +1,11 @@
-import type { ArticleContent, Topic, TopicMatch } from './types';
+import type { ArticleContent, TopicMatch } from './types';
+
+/** Minimal topic shape the matcher needs — accepts UserTopic or the
+ *  legacy single-user Topic without a hard type coupling. */
+export type MatchableTopic = { id: number; name: string; description: string };
 
 export interface TopicMatcher {
-  match(article: ArticleContent, topics: Topic[]): Promise<TopicMatch[]>;
+  match(article: ArticleContent, topics: MatchableTopic[]): Promise<TopicMatch[]>;
 }
 
 const STOPWORDS = new Set([
@@ -34,7 +38,7 @@ function tokenSet(input: string): Set<string> {
  * name (as a full phrase) appears anywhere in the article.
  */
 export class KeywordTopicMatcher implements TopicMatcher {
-  async match(article: ArticleContent, topics: Topic[]): Promise<TopicMatch[]> {
+  async match(article: ArticleContent, topics: MatchableTopic[]): Promise<TopicMatch[]> {
     const titleTokens = tokenize(article.title);
     const descTokens = tokenize(article.description ?? '');
     const bodyTokens = tokenize(article.text ?? '');

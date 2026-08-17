@@ -1,4 +1,5 @@
 import { repo } from '@/lib/repo';
+import { getSessionId } from '@/lib/session';
 import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
 import { isTelegramSource } from '@/app/icons';
 import { RunIngestionButton } from './RunIngestionButton';
@@ -26,10 +27,11 @@ const ENABLE_OPTS = [
 ];
 
 export default async function SettingsPage() {
+  const sessionId = await getSessionId();
   const [sources, topics, settings] = await Promise.all([
-    repo.listSources(),
-    repo.listTopics(),
-    repo.getSettings(),
+    repo.userSources(sessionId),
+    repo.userTopics(sessionId),
+    repo.userSettings(sessionId),
   ]);
 
   const existingRssUrls = new Set(sources.map((s) => s.rss_url));
@@ -58,12 +60,13 @@ export default async function SettingsPage() {
             {sources.map((s) => {
               const telegram = isTelegramSource(s.rss_url);
               let host = s.website_url;
-              try { host = new URL(s.website_url).hostname; } catch { /* keep raw URL */ }
+              try { host = new URL(s.website_url).hostname; } catch { /* keep raw */ }
+              const name = s.display_name ?? s.canonical_name;
               return (
-                <div key={s.id} className="list-row">
+                <div key={s.feed_source_id} className="list-row">
                   <div className="list-row-main">
                     <span className="list-row-name">
-                      {s.name}
+                      {name}
                       {telegram && (
                         <span className="tag tag-topic tag-topic-sm" style={{ marginInlineStart: 8 }}>
                           טלגרם
@@ -78,10 +81,10 @@ export default async function SettingsPage() {
                       value={s.enabled ? 'true' : 'false'}
                       options={ENABLE_OPTS}
                       action={setSourceEnabledAction}
-                      extra={{ id: String(s.id) }}
+                      extra={{ id: String(s.feed_source_id) }}
                     />
                     <form action={deleteSourceAction}>
-                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="id" value={s.feed_source_id} />
                       <button type="submit" className="btn-danger-ghost">
                         מחיקה
                       </button>
@@ -115,59 +118,36 @@ export default async function SettingsPage() {
           <form action={addTelegramChannelAction} style={{ display: 'grid', gap: 14, marginTop: 16 }}>
             <div className="field">
               <label>שם המשתמש בערוץ</label>
-              <input
-                name="handle"
-                required
-                className="input"
-                placeholder="@amitsegal או t.me/amitsegal"
-              />
+              <input name="handle" required className="input" placeholder="@amitsegal או t.me/amitsegal" />
             </div>
             <div className="field">
               <label>שם תצוגה (אופציונלי)</label>
               <input name="name" className="input" placeholder="עמית סגל" />
             </div>
             <div>
-              <button type="submit" className="btn btn-tel">
-                הוספת ערוץ
-              </button>
+              <button type="submit" className="btn btn-tel">הוספת ערוץ</button>
             </div>
           </form>
         </details>
 
         <details className="details-card">
           <summary>הוספת מקור מותאם אישית</summary>
-          <form
-            action={createSourceAction}
-            className="grid-2"
-            style={{ marginTop: 16 }}
-          >
+          <form action={createSourceAction} className="grid-2" style={{ marginTop: 16 }}>
             <div className="field">
               <label>שם</label>
               <input name="name" required className="input" placeholder="לדוגמה: כלכליסט" />
             </div>
             <div className="field">
               <label>אתר</label>
-              <input
-                name="website_url"
-                required
-                className="input"
-                placeholder="https://example.co.il"
-              />
+              <input name="website_url" required className="input" placeholder="https://example.co.il" />
             </div>
             <div className="field full-span">
               <label>כתובת RSS</label>
-              <input
-                name="rss_url"
-                required
-                className="input"
-                placeholder="https://example.co.il/rss"
-              />
+              <input name="rss_url" required className="input" placeholder="https://example.co.il/rss" />
             </div>
             <input type="hidden" name="enabled" value="on" />
             <div className="full-span">
-              <button type="submit" className="btn btn-secondary">
-                הוספה
-              </button>
+              <button type="submit" className="btn btn-secondary">הוספה</button>
             </div>
           </form>
         </details>
@@ -188,17 +168,10 @@ export default async function SettingsPage() {
               </div>
               <div className="field">
                 <label>מילות מפתח להתאמה</label>
-                <textarea
-                  name="description"
-                  defaultValue={t.description}
-                  rows={2}
-                  className="input"
-                />
+                <textarea name="description" defaultValue={t.description} rows={2} className="input" />
               </div>
               <div>
-                <button type="submit" className="btn btn-secondary">
-                  שמירה
-                </button>
+                <button type="submit" className="btn btn-secondary">שמירה</button>
               </div>
             </form>
 
@@ -212,9 +185,7 @@ export default async function SettingsPage() {
               />
               <form action={deleteTopicAction}>
                 <input type="hidden" name="id" value={t.id} />
-                <button type="submit" className="btn-danger-ghost">
-                  מחיקה
-                </button>
+                <button type="submit" className="btn-danger-ghost">מחיקה</button>
               </form>
             </div>
           </div>
@@ -223,10 +194,7 @@ export default async function SettingsPage() {
         {availableTopicPresets.length > 0 && (
           <details className="details-card-violet">
             <summary>הוספה מקטלוג נושאים</summary>
-            <form
-              action={addTopicPresetsAction}
-              style={{ marginTop: 16, display: 'grid', gap: 14 }}
-            >
+            <form action={addTopicPresetsAction} style={{ marginTop: 16, display: 'grid', gap: 14 }}>
               <div
                 style={{
                   display: 'grid',
@@ -237,13 +205,7 @@ export default async function SettingsPage() {
                 {availableTopicPresets.map((p) => (
                   <label
                     key={p.name}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 8,
-                      fontSize: 13,
-                      color: 'var(--ink-body-soft)',
-                    }}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--ink-body-soft)' }}
                   >
                     <input
                       type="checkbox"
@@ -259,9 +221,7 @@ export default async function SettingsPage() {
                 ))}
               </div>
               <div>
-                <button type="submit" className="btn btn-primary">
-                  הוספת הנושאים המסומנים
-                </button>
+                <button type="submit" className="btn btn-primary">הוספת הנושאים המסומנים</button>
               </div>
             </form>
           </details>
@@ -269,34 +229,24 @@ export default async function SettingsPage() {
 
         <details className="details-card">
           <summary>הוספת נושא חדש</summary>
-          <form
-            action={createTopicAction}
-            style={{ display: 'grid', gap: 14, marginTop: 16 }}
-          >
+          <form action={createTopicAction} style={{ display: 'grid', gap: 14, marginTop: 16 }}>
             <div className="field">
               <label>שם</label>
               <input name="name" required className="input" placeholder="לדוגמה: אנרגיה" />
             </div>
             <div className="field">
               <label>מילות מפתח להתאמה</label>
-              <textarea
-                name="description"
-                rows={2}
-                className="input"
-                placeholder="מילים שיסמנו כתבות תואמות"
-              />
+              <textarea name="description" rows={2} className="input" placeholder="מילים שיסמנו כתבות תואמות" />
             </div>
             <input type="hidden" name="enabled" value="on" />
             <div>
-              <button type="submit" className="btn btn-secondary">
-                הוספה
-              </button>
+              <button type="submit" className="btn btn-secondary">הוספה</button>
             </div>
           </form>
         </details>
       </section>
 
-      {/* ─── Feed preferences (only age remains — the rest lives in the Feed toolbar) ─── */}
+      {/* ─── Feed preferences ─── */}
       <section className="settings-section">
         <h2>העדפות פיד</h2>
 

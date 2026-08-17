@@ -1,7 +1,6 @@
 import { repo } from './repo';
 import { fetchFeed } from './rss';
 import { extractArticle } from './extract';
-import { defaultMatcher, DEFAULT_MATCH_THRESHOLD } from './matcher';
 import { contentHash } from './hash';
 import { parseTelegramHandle, fetchTelegramChannel } from './telegram';
 
@@ -13,9 +12,16 @@ export type IngestSummary = {
   errorDetails: { source: string; message: string }[];
 };
 
-export async function runIngestion(): Promise<IngestSummary> {
-  const sources = await repo.enabledSources();
-  const allTopics = await repo.enabledTopics();
+/**
+ * Phase 1 ingestion: iterate the GLOBAL feed_sources table, oldest-fetched
+ * first, and store new articles once. No per-user topic matching happens
+ * here — matching is computed at query time per user, from user_topics.
+ *
+ * A single source failing is recorded on the source row (last_error,
+ * fetch_failure_count) and doesn't stop the rest of the batch.
+ */
+export async function runIngestion(opts?: { limit?: number }): Promise<IngestSummary> {
+  const sources = await repo.feedSourcesDueForFetch(opts?.limit ?? 100);
 
   const summary: IngestSummary = {
     sourcesChecked: sources.length,
@@ -27,14 +33,6 @@ export async function runIngestion(): Promise<IngestSummary> {
 
   for (const source of sources) {
     try {
-      // Determine which topics apply for this source.
-      const explicitTopicIds = await repo.getSourceTopicIds(source.id);
-      const sourceTopics =
-        explicitTopicIds.length > 0
-          ? allTopics.filter((t) => explicitTopicIds.includes(t.id))
-          : allTopics;
-
-      // Telegram sources: scrape t.me/s/<handle> instead of parsing RSS.
       const tgHandle = parseTelegramHandle(source.rss_url);
       if (tgHandle) {
         const messages = await fetchTelegramChannel(tgHandle);
@@ -52,7 +50,7 @@ export async function runIngestion(): Promise<IngestSummary> {
             }
 
             const inserted = await repo.insertArticle({
-              source_id: source.id,
+              feed_source_id: source.id,
               title: msg.title,
               url: msg.link,
               canonical_url: null,
@@ -62,26 +60,20 @@ export async function runIngestion(): Promise<IngestSummary> {
               clean_html: msg.cleanHtml,
               content_hash: hash,
             });
-            if (!inserted) continue;
-            summary.newArticles += 1;
-
-            const matches = await defaultMatcher.match(
-              { title: inserted.title, description: inserted.description ?? '', text: inserted.clean_text ?? '' },
-              sourceTopics,
-            );
-            const kept = matches.filter((m) => m.score >= DEFAULT_MATCH_THRESHOLD);
-            if (kept.length > 0) await repo.setArticleTopics(inserted.id, kept);
+            if (inserted) summary.newArticles += 1;
           } catch (err) {
             summary.errors += 1;
             summary.errorDetails.push({
-              source: source.name,
+              source: source.canonical_name,
               message: `message ${msg.link}: ${(err as Error).message}`,
             });
           }
         }
+        await repo.feedSourceMarkFetched(source.id, true);
         continue;
       }
 
+      // Classic RSS
       const entries = await fetchFeed(source.rss_url);
       summary.articlesFound += entries.length;
 
@@ -102,7 +94,7 @@ export async function runIngestion(): Promise<IngestSummary> {
           }
 
           const inserted = await repo.insertArticle({
-            source_id: source.id,
+            feed_source_id: source.id,
             title: extracted?.title || entry.title,
             url: entry.link,
             canonical_url: canonical,
@@ -112,34 +104,21 @@ export async function runIngestion(): Promise<IngestSummary> {
             clean_html: cleanHtml || null,
             content_hash: hash,
           });
-
-          if (!inserted) continue;
-          summary.newArticles += 1;
-
-          const matches = await defaultMatcher.match(
-            {
-              title: inserted.title,
-              description: inserted.description ?? '',
-              text: inserted.clean_text ?? '',
-            },
-            sourceTopics,
-          );
-          const kept = matches.filter((m) => m.score >= DEFAULT_MATCH_THRESHOLD);
-          if (kept.length > 0) await repo.setArticleTopics(inserted.id, kept);
+          if (inserted) summary.newArticles += 1;
         } catch (err) {
           summary.errors += 1;
           summary.errorDetails.push({
-            source: source.name,
+            source: source.canonical_name,
             message: `article ${entry.link}: ${(err as Error).message}`,
           });
         }
       }
+      await repo.feedSourceMarkFetched(source.id, true);
     } catch (err) {
       summary.errors += 1;
-      summary.errorDetails.push({
-        source: source.name,
-        message: (err as Error).message,
-      });
+      const message = (err as Error).message;
+      summary.errorDetails.push({ source: source.canonical_name, message });
+      await repo.feedSourceMarkFetched(source.id, false, message).catch(() => {});
     }
   }
 

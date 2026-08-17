@@ -1,65 +1,86 @@
--- Cleanews schema (MVP, single-user)
--- Run against a Supabase / PostgreSQL database.
+-- Cleanews schema — Phase 1 multi-tenant.
+-- Runs against a Supabase / PostgreSQL database.
+-- All tables use IF NOT EXISTS so re-running is safe.
 
-CREATE TABLE IF NOT EXISTS sources (
-  id           SERIAL PRIMARY KEY,
-  name         TEXT NOT NULL,
-  website_url  TEXT NOT NULL,
-  rss_url      TEXT NOT NULL UNIQUE,
-  enabled      BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- ─────────────────────── Global tables ───────────────────────
+
+-- Master catalog of every RSS URL ever added by any user. Fetched once
+-- per cron cycle, regardless of how many users subscribe.
+CREATE TABLE IF NOT EXISTS feed_sources (
+  id                   SERIAL PRIMARY KEY,
+  rss_url              TEXT NOT NULL UNIQUE,
+  website_url          TEXT NOT NULL,
+  canonical_name       TEXT NOT NULL,
+  last_fetched_at      TIMESTAMPTZ,
+  fetch_failure_count  INTEGER NOT NULL DEFAULT 0,
+  last_error           TEXT,
+  enabled_globally     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS feed_sources_next_fetch_idx
+  ON feed_sources(last_fetched_at NULLS FIRST)
+  WHERE enabled_globally = TRUE;
 
-CREATE TABLE IF NOT EXISTS topics (
+-- Global article store, deduped by URL.
+CREATE TABLE IF NOT EXISTS articles (
+  id             SERIAL PRIMARY KEY,
+  feed_source_id INTEGER NOT NULL REFERENCES feed_sources(id) ON DELETE CASCADE,
+  title          TEXT NOT NULL,
+  url            TEXT NOT NULL,
+  canonical_url  TEXT,
+  published_at   TIMESTAMPTZ,
+  description    TEXT,
+  clean_text     TEXT,
+  clean_html     TEXT,
+  content_hash   TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS articles_url_uniq
+  ON articles(url);
+CREATE UNIQUE INDEX IF NOT EXISTS articles_canonical_uniq
+  ON articles(canonical_url) WHERE canonical_url IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS articles_hash_uniq
+  ON articles(content_hash) WHERE content_hash IS NOT NULL;
+CREATE INDEX IF NOT EXISTS articles_source_pub_idx
+  ON articles(feed_source_id, published_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS articles_pub_idx
+  ON articles(published_at DESC NULLS LAST);
+
+-- ─────────────────────── Per-user tables ───────────────────────
+-- session_id is a UUID stored in the `cnsid` cookie. No `sessions`
+-- table on purpose: session_id is a plain identifier tying rows
+-- together. Sessions come into existence the first time a row is
+-- written for them.
+
+CREATE TABLE IF NOT EXISTS user_sources (
+  session_id     UUID NOT NULL,
+  feed_source_id INTEGER NOT NULL REFERENCES feed_sources(id) ON DELETE CASCADE,
+  enabled        BOOLEAN NOT NULL DEFAULT TRUE,
+  display_name   TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (session_id, feed_source_id)
+);
+CREATE INDEX IF NOT EXISTS user_sources_session_idx ON user_sources(session_id);
+
+CREATE TABLE IF NOT EXISTS user_topics (
   id           SERIAL PRIMARY KEY,
-  name         TEXT NOT NULL UNIQUE,
+  session_id   UUID NOT NULL,
+  name         TEXT NOT NULL,
   description  TEXT NOT NULL DEFAULT '',
   enabled      BOOLEAN NOT NULL DEFAULT TRUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (session_id, name)
 );
+CREATE INDEX IF NOT EXISTS user_topics_session_enabled_idx
+  ON user_topics(session_id) WHERE enabled = TRUE;
 
-CREATE TABLE IF NOT EXISTS source_topics (
-  source_id INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-  topic_id  INTEGER NOT NULL REFERENCES topics(id)  ON DELETE CASCADE,
-  PRIMARY KEY (source_id, topic_id)
+CREATE TABLE IF NOT EXISTS user_settings (
+  session_id             UUID PRIMARY KEY,
+  only_matching_topics   BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_mode              TEXT    NOT NULL DEFAULT 'newest'
+    CHECK (sort_mode IN ('newest','relevance')),
+  max_article_age_hours  INTEGER NOT NULL DEFAULT 72,
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE TABLE IF NOT EXISTS articles (
-  id            SERIAL PRIMARY KEY,
-  source_id     INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-  title         TEXT NOT NULL,
-  url           TEXT NOT NULL,
-  canonical_url TEXT,
-  published_at  TIMESTAMPTZ,
-  description   TEXT,
-  clean_text    TEXT,
-  clean_html    TEXT,
-  content_hash  TEXT,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS articles_url_uniq          ON articles(url);
-CREATE UNIQUE INDEX IF NOT EXISTS articles_canonical_uniq    ON articles(canonical_url) WHERE canonical_url IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS articles_hash_uniq         ON articles(content_hash)  WHERE content_hash  IS NOT NULL;
-CREATE        INDEX IF NOT EXISTS articles_published_at_idx  ON articles(published_at DESC);
-CREATE        INDEX IF NOT EXISTS articles_source_id_idx     ON articles(source_id);
-
-CREATE TABLE IF NOT EXISTS article_topics (
-  article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-  topic_id   INTEGER NOT NULL REFERENCES topics(id)   ON DELETE CASCADE,
-  score      REAL    NOT NULL DEFAULT 0,
-  PRIMARY KEY (article_id, topic_id)
-);
-
-CREATE INDEX IF NOT EXISTS article_topics_topic_idx ON article_topics(topic_id);
-
-CREATE TABLE IF NOT EXISTS settings (
-  id                       INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  only_matching_topics     BOOLEAN NOT NULL DEFAULT TRUE,
-  sort_mode                TEXT    NOT NULL DEFAULT 'newest' CHECK (sort_mode IN ('newest','relevance')),
-  max_article_age_hours    INTEGER NOT NULL DEFAULT 72
-);
-
-INSERT INTO settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;

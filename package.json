@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate-multi-user": "tsx scripts/migrate-multi-user.ts",
     "db:seed": "tsx scripts/seed.ts",
     "ingest": "tsx scripts/ingest.ts"
   },
