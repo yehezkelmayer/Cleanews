@@ -1,16 +1,16 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import postgres from 'postgres';
+import { DATABASE_SCHEMA_SQL } from '../src/lib/schema';
 
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is required');
 
   const sql = postgres(url, { prepare: false, max: 1 });
-  const ddl = readFileSync(resolve('src/lib/schema.sql'), 'utf8');
-
   console.log('Applying schema…');
-  await sql.unsafe(ddl);
+  await sql.begin(async (tx) => {
+    await tx`SELECT pg_advisory_xact_lock(hashtext('cleanews-schema'))`;
+    await tx.unsafe(DATABASE_SCHEMA_SQL);
+  });
   console.log('Schema applied.');
   await sql.end();
 }

@@ -1,6 +1,9 @@
--- Cleanews schema (MVP, single-user)
--- Run against a Supabase / PostgreSQL database.
-
+/**
+ * Idempotent database schema used by both the CLI migration and the app's
+ * first database connection. Keep upgrades additive so an existing database
+ * can be brought forward without losing data.
+ */
+export const DATABASE_SCHEMA_SQL = String.raw`
 CREATE TABLE IF NOT EXISTS sources (
   id           SERIAL PRIMARY KEY,
   name         TEXT NOT NULL,
@@ -40,8 +43,10 @@ CREATE TABLE IF NOT EXISTS articles (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Upgrade an existing database created without the source relationship.
--- Existing rows are preserved; newly ingested rows always include source_id.
+-- CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
+-- Older Cleanews databases can therefore be missing this relationship even
+-- though a fresh database has it. The nullable upgrade preserves old rows;
+-- all newly ingested rows always receive a source_id.
 ALTER TABLE articles
   ADD COLUMN IF NOT EXISTS source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE;
 
@@ -68,3 +73,4 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+`;

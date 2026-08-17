@@ -65,8 +65,10 @@ npm run dev           # http://localhost:3000
 
 ## Database
 
-Uses PostgreSQL (Supabase-friendly). Schema lives in `src/lib/schema.sql`
-and is applied by `scripts/migrate.ts`.
+Uses PostgreSQL (Supabase-friendly). The schema is applied automatically on
+the first database query and can also be applied explicitly by
+`scripts/migrate.ts`. A SQL copy for manual administration lives in
+`src/lib/schema.sql`.
 
 Tables: `sources`, `topics`, `source_topics`, `articles`, `article_topics`,
 `settings`. See the SQL file for details.
@@ -134,8 +136,9 @@ You can also run ingestion locally: `npm run ingest`.
 2. Import it in Vercel.
 3. Add env vars: `DATABASE_URL`, `CRON_SECRET`.
 4. Deploy. `vercel.json` registers the cron automatically.
-5. First deploy: run the SQL in `src/lib/schema.sql` against your database
-   (or run `npm run db:migrate` locally with the prod `DATABASE_URL`).
+5. The first database request applies the idempotent schema automatically.
+   You can also run the SQL in `src/lib/schema.sql` manually, or run
+   `npm run db:migrate` with the production `DATABASE_URL`.
 
 ## Tests
 
