@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { repo } from '@/lib/repo';
 import { sourceInput, topicInput, settingsInput } from '@/lib/validation';
 import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
+import { parseTelegramHandle } from '@/lib/telegram';
 
 function parseInt10(v: FormDataEntryValue | null): number {
   const n = parseInt(String(v ?? ''), 10);
@@ -138,16 +139,46 @@ export async function addSourcePresetsAction(formData: FormData) {
   const selected = new Set(formData.getAll('preset_rss').map(String));
   if (selected.size === 0) return;
   const existing = await repo.listSources();
-  const existingUrls = new Set(existing.map((s) => s.rss_url));
   for (const preset of SOURCE_PRESETS) {
     if (!selected.has(preset.rss_url)) continue;
-    if (existingUrls.has(preset.rss_url)) continue;
-    await repo.createSource({
+
+    const presetTelegramHandle = parseTelegramHandle(preset.rss_url)?.toLowerCase() ?? null;
+    const current = existing.find((source) => {
+      if (source.rss_url === preset.rss_url) return true;
+      const sourceTelegramHandle = parseTelegramHandle(source.rss_url)?.toLowerCase() ?? null;
+      if (presetTelegramHandle) return sourceTelegramHandle === presetTelegramHandle;
+      if (sourceTelegramHandle) return false;
+      return (
+        source.name.toLowerCase() === preset.name.toLowerCase() ||
+        source.website_url === preset.website_url
+      );
+    });
+
+    if (current) {
+      if (
+        current.name !== preset.name ||
+        current.website_url !== preset.website_url ||
+        current.rss_url !== preset.rss_url ||
+        !current.enabled
+      ) {
+        await repo.updateSource(current.id, {
+          name: preset.name,
+          website_url: preset.website_url,
+          rss_url: preset.rss_url,
+          enabled: true,
+        });
+        Object.assign(current, preset, { enabled: true });
+      }
+      continue;
+    }
+
+    const created = await repo.createSource({
       name: preset.name,
       website_url: preset.website_url,
       rss_url: preset.rss_url,
       enabled: true,
     });
+    existing.push(created);
   }
   revalidatePath('/settings');
 }

@@ -9,9 +9,19 @@ type Group = SourcePreset['group'];
 const GROUP_LABELS: Record<Group, string> = {
   'israel-hebrew': 'ישראל · עברית',
   'israel-english': 'Israel · English',
+  telegram: 'Telegram · ישראל',
   'world-news': 'World news',
   tech: 'Tech',
 };
+
+function presetDetail(preset: SourcePreset): string {
+  const url = new URL(preset.website_url);
+  if (preset.group === 'telegram') {
+    const handle = url.pathname.split('/').filter(Boolean)[0];
+    return handle ? `@${handle}` : 'Telegram';
+  }
+  return url.hostname;
+}
 
 export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
   const [group, setGroup] = useState<Group>('israel-hebrew');
@@ -53,7 +63,7 @@ export function CatalogPicker({ presets }: { presets: SourcePreset[] }) {
               <span>
                 <strong style={{ color: 'var(--ink)' }}>{preset.name}</strong>{' '}
                 <span style={{ color: 'var(--ink-muted)' }}>
-                  — {new URL(preset.website_url).hostname}
+                  — {presetDetail(preset)}
                 </span>
               </span>
             </label>

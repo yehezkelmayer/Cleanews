@@ -1,5 +1,6 @@
 import { repo } from '@/lib/repo';
 import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
+import { parseTelegramHandle } from '@/lib/telegram';
 import { isTelegramSource } from '@/app/icons';
 import { RunIngestionButton } from './RunIngestionButton';
 import { CatalogPicker } from './CatalogPicker';
@@ -32,8 +33,17 @@ export default async function SettingsPage() {
   ]);
 
   const existingRssUrls = new Set(sources.map((s) => s.rss_url));
+  const existingTelegramHandles = new Set(
+    sources
+      .map((source) => parseTelegramHandle(source.rss_url)?.toLowerCase())
+      .filter((handle): handle is string => Boolean(handle)),
+  );
   const existingTopicNames = new Set(topics.map((t) => t.name.toLowerCase()));
-  const catalogAvailable = SOURCE_PRESETS.filter((p) => !existingRssUrls.has(p.rss_url));
+  const catalogAvailable = SOURCE_PRESETS.filter((preset) => {
+    if (existingRssUrls.has(preset.rss_url)) return false;
+    const telegramHandle = parseTelegramHandle(preset.rss_url)?.toLowerCase();
+    return !telegramHandle || !existingTelegramHandles.has(telegramHandle);
+  });
   const availableTopicPresets = TOPIC_PRESETS.filter(
     (p) => !existingTopicNames.has(p.name.toLowerCase()),
   );
