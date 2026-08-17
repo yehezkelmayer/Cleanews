@@ -57,14 +57,16 @@ export function FeedToolbar({
 
   return (
     <div className="toolbar" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-      {/* Row 1: search full-width */}
+      {/* Row 1: search full-width — never disabled; the debounce alone
+          throttles the URL push so the input stays responsive while
+          the server re-renders in a transition. */}
       <div className="search-wrap" style={{ flex: 'unset', width: '100%' }}>
         <SearchIcon />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="חיפוש כתבות..."
-          disabled={pending}
+          aria-busy={pending}
         />
       </div>
 

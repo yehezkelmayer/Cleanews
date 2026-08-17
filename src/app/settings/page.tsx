@@ -15,7 +15,6 @@ import {
   setFeedPreferenceAction,
   setSourceEnabledAction,
   setTopicEnabledAction,
-  updateTopicAction,
 } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -157,39 +156,41 @@ export default async function SettingsPage() {
       <section className="settings-section">
         <h2>נושאים</h2>
 
-        {topics.map((t) => (
-          <div key={t.id} className="card-plain" style={{ display: 'grid', gap: 14 }}>
-            <form action={updateTopicAction} style={{ display: 'grid', gap: 14 }}>
-              <input type="hidden" name="id" value={t.id} />
-              <input type="hidden" name="enabled" value={t.enabled ? 'on' : ''} />
-              <div className="field">
-                <label>שם</label>
-                <input name="name" defaultValue={t.name} required className="input" />
+        {topics.length > 0 && (
+          <div className="list-scroll">
+            {topics.map((t) => (
+              <div key={t.id} className="list-row">
+                <div className="list-row-main">
+                  <span className="list-row-name">{t.name}</span>
+                  {t.description && (
+                    <span className="list-row-sub" style={{ direction: 'rtl', textAlign: 'right' }}>
+                      {t.description.length > 90 ? `${t.description.slice(0, 90)}…` : t.description}
+                    </span>
+                  )}
+                </div>
+                <div className="list-row-actions">
+                  <SegControl
+                    name="enabled"
+                    value={t.enabled ? 'true' : 'false'}
+                    options={ENABLE_OPTS}
+                    action={setTopicEnabledAction}
+                    extra={{ id: String(t.id) }}
+                  />
+                  <form action={deleteTopicAction}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <button type="submit" className="btn-danger-ghost">
+                      מחיקה
+                    </button>
+                  </form>
+                </div>
               </div>
-              <div className="field">
-                <label>מילות מפתח להתאמה</label>
-                <textarea name="description" defaultValue={t.description} rows={2} className="input" />
-              </div>
-              <div>
-                <button type="submit" className="btn btn-secondary">שמירה</button>
-              </div>
-            </form>
-
-            <div className="row-between">
-              <SegControl
-                name="enabled"
-                value={t.enabled ? 'true' : 'false'}
-                options={ENABLE_OPTS}
-                action={setTopicEnabledAction}
-                extra={{ id: String(t.id) }}
-              />
-              <form action={deleteTopicAction}>
-                <input type="hidden" name="id" value={t.id} />
-                <button type="submit" className="btn-danger-ghost">מחיקה</button>
-              </form>
+            ))}
+            <div className="list-summary">
+              <span>סה"כ {topics.length} נושאים</span>
+              <span>{topics.filter((t) => t.enabled).length} מופעלים</span>
             </div>
           </div>
-        ))}
+        )}
 
         {availableTopicPresets.length > 0 && (
           <details className="details-card-violet">
