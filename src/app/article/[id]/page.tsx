@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { repo } from '@/lib/repo';
 import { sanitizeArticleHtml } from '@/lib/sanitize';
 import { relativeTime } from '@/lib/format';
 import { GlobeIcon, TelegramIcon, isTelegramSource } from '@/app/icons';
+import { BackToFeedButton } from './BackToFeedButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,9 +23,7 @@ export default async function ArticlePage({
 
   return (
     <main className="shell-reader reader">
-      <Link href="/" className="reader-back">
-        → חזרה לפיד
-      </Link>
+      <BackToFeedButton />
 
       <div className="reader-meta">
         {telegram ? <TelegramIcon size={14} color="var(--violet)" /> : <GlobeIcon size={14} />}
