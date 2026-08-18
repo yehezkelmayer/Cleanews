@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Newsreader:ital,wght@0,600;1,600&display=swap');
 
 :root {
   --bg: #faf9fd;
@@ -110,16 +110,14 @@ a:hover { color: var(--violet-deep); }
 }
 .nav-brand {
   display: inline-flex; align-items: center; gap: 10px;
-  font-weight: 800; font-size: 19px; letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.nav-logo {
-  position: relative; width: 22px; height: 22px; border-radius: 50%;
-  background: conic-gradient(from 180deg, #7c3aed, #ff6b5e, #7c3aed);
-  display: inline-block;
-}
-.nav-logo::after {
-  content: ''; position: absolute; inset: 5px; border-radius: 50%;
-  background: var(--bg);
+.nav-brand .wordmark {
+  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  font-weight: 600; font-style: italic;
+  font-size: 22px; line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 .nav-links { display: inline-flex; align-items: center; gap: 8px; }
 .nav-link {

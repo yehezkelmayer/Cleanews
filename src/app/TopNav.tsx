@@ -24,8 +24,8 @@ export function TopNav() {
         </Link>
       </div>
       <span className="nav-brand" style={{ marginInlineStart: 'auto' }}>
-        <LogoMark />
-        <span>Cleanews</span>
+        <LogoMark size={28} />
+        <span className="wordmark">Cleanews</span>
       </span>
     </nav>
   );

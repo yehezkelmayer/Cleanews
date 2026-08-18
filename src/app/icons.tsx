@@ -1,5 +1,30 @@
-export function LogoMark() {
-  return <span className="nav-logo" aria-hidden="true" />;
+export function LogoMark({ size = 26 }: { size?: number }) {
+  // Rounded-square badge with three "text line" bars — blue, ink, amber.
+  // This is the brand mark's own palette (blue/ink/amber), intentionally
+  // independent of the app's violet/coral UI accent — like a flag.
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 72 72"
+      role="img"
+      aria-label="Cleanews"
+    >
+      <rect
+        x="6"
+        y="6"
+        width="60"
+        height="60"
+        rx="16"
+        fill="#ffffff"
+        stroke="rgba(30,27,46,0.10)"
+        strokeWidth="1.5"
+      />
+      <rect x="18" y="24" width="36" height="5" rx="2.5" fill="#2563eb" />
+      <rect x="18" y="34" width="36" height="5" rx="2.5" fill="#1e1b2e" />
+      <rect x="18" y="44" width="20" height="5" rx="2.5" fill="#d97706" />
+    </svg>
+  );
 }
 
 const strokeProps = {
