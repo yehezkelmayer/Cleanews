@@ -1,6 +1,7 @@
 import { repo } from '@/lib/repo';
 import { getSessionId } from '@/lib/session';
 import { SOURCE_PRESETS, TOPIC_PRESETS } from '@/lib/presets';
+import { copy } from '@/lib/copy';
 import { isTelegramSource } from '@/app/icons';
 import { RunIngestionButton } from './RunIngestionButton';
 import { CatalogPicker } from './CatalogPicker';
@@ -12,6 +13,7 @@ import {
   createTopicAction,
   deleteSourceAction,
   deleteTopicAction,
+  restartWizardAction,
   setFeedPreferenceAction,
   setSourceEnabledAction,
   setTopicEnabledAction,
@@ -21,8 +23,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const ENABLE_OPTS = [
-  { value: 'true', label: 'מופעל' },
-  { value: 'false', label: 'מושבת' },
+  { value: 'true', label: copy.enableOn },
+  { value: 'false', label: copy.enableOff },
 ];
 
 export default async function SettingsPage() {
@@ -42,17 +44,28 @@ export default async function SettingsPage() {
 
   return (
     <main className="shell-settings">
-      <h1 style={{ fontSize: 32 }}>הגדרות</h1>
+      <div>
+        <h1 style={{ fontSize: 32, marginBottom: 6 }}>{copy.settingsTitle}</h1>
+        <p style={{ margin: 0, color: 'var(--ink-muted)', fontSize: 14 }}>
+          {copy.settingsSubtitle}
+        </p>
+      </div>
 
       {/* ─── Fetch news ─── */}
       <section className="settings-section">
-        <h2>משיכת חדשות</h2>
+        <h2>{copy.fetchSectionTitle}</h2>
+        <p style={{ margin: '-4px 0 0', fontSize: 13, color: 'var(--ink-muted)' }}>
+          {copy.fetchSectionBody}
+        </p>
         <RunIngestionButton />
       </section>
 
       {/* ─── Sources ─── */}
       <section className="settings-section">
-        <h2>מקורות חדשות</h2>
+        <h2>{copy.sourcesSectionTitle}</h2>
+        <p style={{ margin: '-4px 0 0', fontSize: 13, color: 'var(--ink-muted)' }}>
+          {copy.sourcesSectionBody}
+        </p>
 
         {sources.length > 0 && (
           <div className="list-scroll">
@@ -100,7 +113,7 @@ export default async function SettingsPage() {
         )}
 
         <details className="details-card-violet">
-          <summary>הוספה מקטלוג מקורות</summary>
+          <summary>{copy.addFromCatalog}</summary>
           <div style={{ marginTop: 16 }}>
             {catalogAvailable.length === 0 ? (
               <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-muted)' }}>
@@ -113,7 +126,7 @@ export default async function SettingsPage() {
         </details>
 
         <details className="details-card">
-          <summary>הוספת ערוץ טלגרם</summary>
+          <summary>{copy.addTelegramChannel}</summary>
           <form action={addTelegramChannelAction} style={{ display: 'grid', gap: 14, marginTop: 16 }}>
             <div className="field">
               <label>שם המשתמש בערוץ</label>
@@ -130,7 +143,7 @@ export default async function SettingsPage() {
         </details>
 
         <details className="details-card">
-          <summary>הוספת מקור מותאם אישית</summary>
+          <summary>{copy.addManualRss}</summary>
           <form action={createSourceAction} className="grid-2" style={{ marginTop: 16 }}>
             <div className="field">
               <label>שם</label>
@@ -154,7 +167,10 @@ export default async function SettingsPage() {
 
       {/* ─── Topics ─── */}
       <section className="settings-section">
-        <h2>נושאים</h2>
+        <h2>{copy.topicsSectionTitle}</h2>
+        <p style={{ margin: '-4px 0 0', fontSize: 13, color: 'var(--ink-muted)' }}>
+          {copy.topicsSectionBody}
+        </p>
 
         {topics.length > 0 && (
           <div className="list-scroll">
@@ -194,7 +210,7 @@ export default async function SettingsPage() {
 
         {availableTopicPresets.length > 0 && (
           <details className="details-card-violet">
-            <summary>הוספה מקטלוג נושאים</summary>
+            <summary>{copy.addTopicsFromCatalog}</summary>
             <form action={addTopicPresetsAction} style={{ marginTop: 16, display: 'grid', gap: 14 }}>
               <div
                 style={{
@@ -229,7 +245,7 @@ export default async function SettingsPage() {
         )}
 
         <details className="details-card">
-          <summary>הוספת נושא חדש</summary>
+          <summary>{copy.addCustomTopic}</summary>
           <form action={createTopicAction} style={{ display: 'grid', gap: 14, marginTop: 16 }}>
             <div className="field">
               <label>שם</label>
@@ -249,7 +265,10 @@ export default async function SettingsPage() {
 
       {/* ─── Feed preferences ─── */}
       <section className="settings-section">
-        <h2>העדפות פיד</h2>
+        <h2>{copy.prefsSectionTitle}</h2>
+        <p style={{ margin: '-4px 0 0', fontSize: 13, color: 'var(--ink-muted)' }}>
+          {copy.prefsSectionBody}
+        </p>
 
         <div>
           <div style={{ fontSize: 13, color: 'var(--ink-placeholder)', marginBottom: 8 }}>
@@ -266,9 +285,15 @@ export default async function SettingsPage() {
             action={setFeedPreferenceAction}
           />
         </div>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-muted)' }}>
-          חיפוש, מיון והצגת נושאים תואמים זמינים ישירות בסרגל שמעל הפיד.
-        </p>
+      </section>
+
+      {/* ─── Restart wizard ─── */}
+      <section className="settings-section" style={{ opacity: 0.85 }}>
+        <form action={restartWizardAction}>
+          <button type="submit" className="btn btn-secondary">
+            {copy.restartWizard}
+          </button>
+        </form>
       </section>
     </main>
   );

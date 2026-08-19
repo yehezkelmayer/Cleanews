@@ -59,6 +59,7 @@ export type UserSettings = {
   only_matching_topics: boolean;
   sort_mode: 'newest' | 'relevance';
   max_article_age_hours: number;
+  onboarded_at: string | null;
   updated_at: string;
 };
 

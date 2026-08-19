@@ -223,3 +223,13 @@ export async function toggleSourceAction(formData: FormData) {
 export async function toggleTopicAction(formData: FormData) {
   return setTopicEnabledAction(formData);
 }
+
+/** Wipe onboarded_at + redirect to the welcome step. */
+export async function restartWizardAction() {
+  const sessionId = await getSessionId();
+  await repo.resetOnboarded(sessionId);
+  revalidatePath('/');
+  revalidatePath('/settings');
+  const { redirect } = await import('next/navigation');
+  redirect('/onboarding');
+}

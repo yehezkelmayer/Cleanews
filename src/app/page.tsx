@@ -4,6 +4,8 @@ import { getSessionId } from '@/lib/session';
 import { relativeTime, truncate } from '@/lib/format';
 import { GlobeIcon, TelegramIcon, isTelegramSource } from './icons';
 import { FeedToolbar } from './FeedToolbar';
+import { Toast } from './Toast';
+import { copy } from '@/lib/copy';
 import type { FeedItem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -52,11 +54,70 @@ export default async function FeedPage({
   const topicId = parseIntParam(sp.topic);
 
   const sessionId = await getSessionId();
+  const showWelcomeToast = first(sp.welcome) === '1';
+
   const [settings, sources, topics] = await Promise.all([
     repo.userSettings(sessionId),
     repo.userSources(sessionId),
     repo.userTopics(sessionId, { onlyEnabled: true }),
   ]);
+
+  const hasNoSources = sources.filter((s) => s.enabled).length === 0;
+  // First-time visitor — no sources yet. Show the empty-feed hero +
+  // a sample from the shared pool so the app doesn't look broken.
+  if (hasNoSources) {
+    const samples = await repo.publicSampleArticles(20);
+    const sampleWebsite = samples.filter((s) => !isTelegramSource(s.url));
+    const sampleTelegram = samples.filter((s) => isTelegramSource(s.url));
+    return (
+      <main className="shell-feed">
+        {showWelcomeToast && <Toast message={copy.wizardDoneToast} />}
+        <section className="feed-empty-hero card-in">
+          <span className="kicker">{copy.emptyKicker}</span>
+          <h1>{copy.emptyTitle}</h1>
+          <p>{copy.emptyBody}</p>
+          <div className="cta-row">
+            <Link href="/onboarding" className="btn btn-primary">{copy.emptyCta}</Link>
+          </div>
+        </section>
+
+        <div className="feed-sample-label">{copy.emptySampleLabel}</div>
+
+        <div className="feed-layout">
+          <div>
+            {sampleWebsite.length === 0 ? (
+              <div className="card-plain" style={{ padding: 24, textAlign: 'center' }}>
+                <p style={{ margin: 0, color: 'var(--ink-muted)' }}>
+                  אין כתבות במאגר כרגע.
+                </p>
+              </div>
+            ) : (
+              <div className="feed-grid">
+                {sampleWebsite.slice(0, 15).map((item, i) => (
+                  <FeedCard key={item.id} item={item} delay={i} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {sampleTelegram.length > 0 && (
+            <aside className="tg-rail">
+              <div className="tg-rail-title">
+                <TelegramIcon size={16} color="var(--violet)" />
+                <span>עדכוני טלגרם</span>
+                <span className="pulse-dot pulse-dot-sm" />
+              </div>
+              <div className="tg-list">
+                {sampleTelegram.slice(0, 5).map((item) => (
+                  <TelegramCard key={item.id} item={item} />
+                ))}
+              </div>
+            </aside>
+          )}
+        </div>
+      </main>
+    );
+  }
 
   const sortMode: 'newest' | 'relevance' =
     sortParam === 'relevance' ? 'relevance' : 'newest';
@@ -83,6 +144,7 @@ export default async function FeedPage({
 
   return (
     <main className="shell-feed">
+      {showWelcomeToast && <Toast message={copy.wizardDoneToast} />}
       <FeedToolbar
         initialSearch={q}
         sortMode={sortMode}

@@ -82,5 +82,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
   sort_mode              TEXT    NOT NULL DEFAULT 'newest'
     CHECK (sort_mode IN ('newest','relevance')),
   max_article_age_hours  INTEGER NOT NULL DEFAULT 72,
+  onboarded_at           TIMESTAMPTZ,
   updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Idempotent add for previously-installed schemas
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS onboarded_at TIMESTAMPTZ;

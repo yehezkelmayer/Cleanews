@@ -248,6 +248,47 @@ export const repo = {
       WHERE session_id = ${sessionId}`;
   },
 
+  async markOnboarded(sessionId: string) {
+    await sql`
+      INSERT INTO user_settings (session_id, onboarded_at)
+      VALUES (${sessionId}, NOW())
+      ON CONFLICT (session_id) DO UPDATE SET onboarded_at = NOW(), updated_at = NOW()`;
+  },
+
+  async resetOnboarded(sessionId: string) {
+    await sql`
+      UPDATE user_settings SET onboarded_at = NULL, updated_at = NOW()
+      WHERE session_id = ${sessionId}`;
+  },
+
+  // ────────────────── public sample (empty-feed preview) ──────────────────
+
+  /**
+   * Recent articles from the shared pool, regardless of the current
+   * session's subscriptions. Used as the empty-feed preview so new
+   * visitors see something real while they haven't picked sources yet.
+   */
+  async publicSampleArticles(limit = 20): Promise<FeedItem[]> {
+    const rows = await sql<
+      (Article & { source_name: string; website_url: string })[]
+    >`
+      SELECT a.*, fs.canonical_name AS source_name, fs.website_url
+      FROM articles a
+      JOIN feed_sources fs ON fs.id = a.feed_source_id
+      WHERE fs.enabled_globally = TRUE
+        AND (a.published_at IS NULL
+             OR a.published_at >= NOW() - INTERVAL '48 hours')
+      ORDER BY a.published_at DESC NULLS LAST
+      LIMIT ${limit}`;
+    return rows.map((a) => ({
+      ...a,
+      source_name: a.source_name,
+      website_url: a.website_url,
+      topics: [],
+      best_score: 0,
+    }));
+  },
+
   // ────────────────── feed (per session, per-query topic matching) ──────────────────
 
   async feed(
