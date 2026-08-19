@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import { TopNav } from './TopNav';
 import { BottomNav } from './BottomNav';
 import './globals.css';
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           קורא חדשות בטקסט בלבד. ללא תמונות, אף פעם.
         </footer>
         <BottomNav />
+        <Analytics />
       </body>
     </html>
   );
